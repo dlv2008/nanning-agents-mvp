@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const store = require('./config/datastore');
 const llmClient = require('./services/llm-client');
+const supabase = require('./services/supabase-client');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,11 +35,18 @@ const upload = multer({
 // ============ API 路由 ============
 
 // 获取所有智能体
-app.get('/api/agents', (req, res) => {
+app.get('/api/agents', async (req, res) => {
     try {
-        const agents = store.getAgents();
-        res.json({ success: true, data: agents });
+        const { data, error } = await supabase
+            .from('agents')
+            .select('*')
+            .eq('is_active', true)
+            .order('id', { ascending: true });
+
+        if (error) throw error;
+        res.json({ success: true, data: data });
     } catch (err) {
+        console.error('Fetch agents error:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
