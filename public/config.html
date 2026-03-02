@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/js/supabase-config.js"></script>
+    <script src="/js/ui.js"></script>
 </head>
 
 <body>
@@ -17,10 +18,11 @@
             <div class="logo-icon">🏭</div>
             <div>
                 <h1>国能南宁AI智能体平台</h1>
-                <div class="subtitle">基于大模型的低代码智能体 MVP</div>
+                <div class="subtitle">AI 办公助手</div>
             </div>
         </a>
         <nav class="header-nav">
+            <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
             <button class="nav-btn" onclick="logout()"
                 style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">🚪 退出</button>
             <a href="/" class="nav-btn">← 返回门户</a>
