@@ -52,32 +52,64 @@ app.get('/api/agents', async (req, res) => {
 });
 
 // 获取单个智能体
-app.get('/api/agents/:code', (req, res) => {
+app.get('/api/agents/:code', async (req, res) => {
     try {
-        const agent = store.getAgent(req.params.code);
-        if (!agent) return res.status(404).json({ success: false, error: '智能体不存在' });
-        res.json({ success: true, data: agent });
+        const { data, error } = await supabase
+            .from('agents')
+            .select('*')
+            .eq('code', req.params.code)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return res.status(404).json({ success: false, error: '智能体不存在' });
+            throw error;
+        }
+        res.json({ success: true, data: data });
     } catch (err) {
+        console.error('Fetch agent error:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // 获取会话列表
-app.get('/api/sessions/:agentCode', (req, res) => {
+app.get('/api/sessions/:agentCode', async (req, res) => {
     try {
-        const sessions = store.getSessions(req.params.agentCode);
-        res.json({ success: true, data: sessions });
+        // 先获取智能体ID
+        const { data: agent } = await supabase
+            .from('agents')
+            .select('id')
+            .eq('code', req.params.agentCode)
+            .single();
+
+        if (!agent) return res.json({ success: true, data: [] });
+
+        const { data, error } = await supabase
+            .from('sessions')
+            .select('*')
+            .eq('agent_id', agent.id)
+            .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        res.json({ success: true, data: data });
     } catch (err) {
+        console.error('Fetch sessions error:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // 获取消息列表
-app.get('/api/messages/:sessionId', (req, res) => {
+app.get('/api/messages/:sessionId', async (req, res) => {
     try {
-        const messages = store.getMessages(parseInt(req.params.sessionId));
-        res.json({ success: true, data: messages });
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('session_id', req.params.sessionId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        res.json({ success: true, data: data });
     } catch (err) {
+        console.error('Fetch messages error:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
