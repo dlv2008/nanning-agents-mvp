@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能体对话 - 国能南宁AI平台</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <!-- 头部 -->
+    <header class="header">
+        <a href="/" class="header-logo">
+            <div class="logo-icon">🏭</div>
+            <div>
+                <h1>国能南宁AI智能体平台</h1>
+                <div class="subtitle">基于大模型的低代码智能体 MVP</div>
+            </div>
+        </a>
+        <nav class="header-nav">
+            <a href="/" class="nav-btn">← 返回门户</a>
+            <a href="/config.html" class="nav-btn">⚙️ 配置</a>
+        </nav>
+    </header>
+
+    <!-- 对话容器 -->
+    <div class="chat-container">
+        <!-- 侧边栏 - 历史会话 -->
+        <aside class="chat-sidebar">
+            <div class="chat-sidebar-header">
+                <button class="new-chat-btn" onclick="createNewSession()">
+                    ➕ 新建会话
+                </button>
+            </div>
+            <div class="chat-sessions-list" id="sessions-list">
+                <!-- 动态载入 -->
+            </div>
+        </aside>
+
+        <!-- 主对话区 -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <div class="chat-agent-info">
+                    <span class="chat-agent-icon" id="agent-icon">🤖</span>
+                    <div>
+                        <div class="chat-agent-name" id="agent-name">智能体名称</div>
+                        <div class="chat-agent-desc" id="agent-desc">描述</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label for="file-input" class="nav-btn" style="cursor: pointer; margin: 0;">📎 上传文件</label>
+                    <input type="file" id="file-input" style="display: none;"
+                        accept=".pdf,.docx,.xlsx,.xls,.txt,.csv,.md" onchange="handleFileUpload(event)">
+                </div>
+            </div>
+
+            <!-- 消息区域 -->
+            <div class="chat-messages" id="messages-area">
+                <div class="chat-welcome" id="welcome-area">
+                    <div class="chat-welcome-icon" id="welcome-icon">🤖</div>
+                    <h3 id="welcome-title">加载中...</h3>
+                    <p id="welcome-desc">正在连接智能体...</p>
+                    <div class="quick-actions" id="quick-actions"></div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-area">
+                <div id="file-badge-area" style="margin-bottom: 8px; display: none;"></div>
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-box">
+                        <textarea class="chat-input" id="chat-input" placeholder="请输入您的问题..." rows="1"
+                            onkeydown="handleInputKeydown(event)" oninput="autoResizeInput()"></textarea>
+                    </div>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()" title="发送">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let currentAgent = null;
+        let currentSessionId = null;
+        let isLoading = false;
+        let uploadedFileContent = null;
+
+        // 获取URL参数中的智能体编码
+        const urlParams = new URLSearchParams(window.location.search);
+        const agentCode = urlParams.get('agent');
+
+        if (!agentCode) {
+            window.location.href = '/';
+        }
+
+        // 快捷操作映射
+        const quickActionsMap = {
+            violation: [
+                '运行部张三巡检时未佩戴安全帽',
+                '查询违章积分统计',
+                '生成考核单',
+                '本月违章分析报告'
+            ],
+            hr: [
+                '分析最近的绩效数据',
+                '查询运行部张三的档案',
+                '部门绩效对比分析',
+                '生成月度绩效报告'
+            ],
+            task: [
+                '帮我分解这份安全检查通知',
+                '查看当前任务进度',
+                '即将到期任务列表',
+                '生成任务督办清单'
+            ],
+            compliance: [
+                '审核外包单位培训材料',
+                '检查安全管理制度合规性',
+                '查看证书到期提醒',
+                '生成合规审核报告'
+            ],
+            production: [
+                '生成1月安全月报',
+                '整理1月工作总结',
+                '季度经营分析报告',
+                '编制会议纪要'
+            ]
+        };
+
+        // 初始化
+        async function init() {
+            await loadAgentInfo();
+            await loadSessions();
+        }
+
+        // 加载智能体信息
+        async function loadAgentInfo() {
+            try {
+                const res = await fetch(`${API_BASE}/api/agents/${agentCode}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentAgent = data.data;
+                    document.title = `${currentAgent.name} - 国能南宁AI平台`;
+                    document.getElementById('agent-icon').textContent = currentAgent.icon;
+                    document.getElementById('agent-name').textContent = currentAgent.name;
+                    document.getElementById('agent-desc').textContent = currentAgent.category;
+
+                    // 设置欢迎信息
+                    document.getElementById('welcome-icon').textContent = currentAgent.icon;
+                    document.getElementById('welcome-title').textContent = `欢迎使用${currentAgent.name}`;
+                    document.getElementById('welcome-desc').textContent = currentAgent.description;
+
+                    // 快速操作
+                    const actions = quickActionsMap[agentCode] || [];
+                    document.getElementById('quick-actions').innerHTML = actions.map(a =>
+                        `<button class="quick-action-btn" onclick="sendQuickAction('${a}')">${a}</button>`
+                    ).join('');
+                }
+            } catch (err) {
+                console.error('加载智能体失败:', err);
+            }
+        }
+
+        // 加载会话列表
+        async function loadSessions() {
+            try {
+                const res = await fetch(`${API_BASE}/api/sessions/${agentCode}`);
+                const data = await res.json();
+                if (data.success) {
+                    renderSessions(data.data);
+                }
+            } catch (err) {
+                console.error('加载会话失败:', err);
+            }
+        }
+
+        function renderSessions(sessions) {
+            const list = document.getElementById('sessions-list');
+            if (sessions.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 13px;">暂无历史会话</div>';
+                return;
+            }
+            list.innerHTML = sessions.map(s => `
+        <div class="session-item ${s.id === currentSessionId ? 'active' : ''}" 
+             onclick="switchSession(${s.id})" title="${s.title}">
+          📝 ${s.title || '未命名会话'}
+        </div>
+      `).join('');
+        }
+
+        // 创建新会话
+        async function createNewSession() {
+            currentSessionId = null;
+            document.getElementById('messages-area').innerHTML = '';
+            showWelcome();
+            await loadSessions();
+        }
+
+        function showWelcome() {
+            const actions = quickActionsMap[agentCode] || [];
+            document.getElementById('messages-area').innerHTML = `
+        <div class="chat-welcome">
+          <div class="chat-welcome-icon">${currentAgent?.icon || '🤖'}</div>
+          <h3>欢迎使用${currentAgent?.name || '智能体'}</h3>
+          <p>${currentAgent?.description || ''}</p>
+          <div class="quick-actions">
+            ${actions.map(a => `<button class="quick-action-btn" onclick="sendQuickAction('${a}')">${a}</button>`).join('')}
+          </div>
+        </div>
+      `;
+        }
+
+        // 切换会话
+        async function switchSession(sessionId) {
+            currentSessionId = sessionId;
+            await loadMessages(sessionId);
+            await loadSessions();
+        }
+
+        // 加载消息
+        async function loadMessages(sessionId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/messages/${sessionId}`);
+                const data = await res.json();
+                if (data.success) {
+                    renderMessages(data.data);
+                }
+            } catch (err) {
+                console.error('加载消息失败:', err);
+            }
+        }
+
+        function renderMessages(messages) {
+            const area = document.getElementById('messages-area');
+            if (messages.length === 0) {
+                showWelcome();
+                return;
+            }
+            area.innerHTML = messages.map(m => createMessageHTML(m.role, m.content)).join('');
+            scrollToBottom();
+        }
+
+        function createMessageHTML(role, content) {
+            const avatar = role === 'assistant' ? (currentAgent?.icon || '🤖') : '👤';
+            const rendered = role === 'assistant' ? renderMarkdown(content) : escapeHtml(content);
+            return `
+        <div class="message ${role}">
+          <div class="message-avatar">${avatar}</div>
+          <div class="message-content">${rendered}</div>
+        </div>
+      `;
+        }
+
+        function renderMarkdown(text) {
+            try {
+                if (typeof marked !== 'undefined') {
+                    marked.setOptions({ breaks: true, gfm: true });
+                    return marked.parse(text);
+                }
+            } catch (e) { }
+            return text.replace(/\n/g, '<br>');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            let message = input.value.trim();
+            if (!message && !uploadedFileContent) return;
+            if (isLoading) return;
+
+            // 如果有上传文件内容，附加到消息中
+            if (uploadedFileContent) {
+                message = message || '请分析以下文件内容';
+                message += `\n\n【上传文件内容】:\n${uploadedFileContent.substring(0, 3000)}`;
+                uploadedFileContent = null;
+                document.getElementById('file-badge-area').style.display = 'none';
+            }
+
+            isLoading = true;
+            input.value = '';
+            autoResizeInput();
+            document.getElementById('send-btn').disabled = true;
+
+            // 清除欢迎区域
+            const welcomeEl = document.querySelector('.chat-welcome');
+            if (welcomeEl) welcomeEl.remove();
+
+            // 显示用户消息
+            appendMessage('user', message);
+
+            // 显示加载中
+            showTypingIndicator();
+
+            try {
+                const res = await fetch(`${API_BASE}/api/chat/${agentCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        message: message
+                    })
+                });
+
+                const data = await res.json();
+                removeTypingIndicator();
+
+                if (data.success) {
+                    currentSessionId = data.data.sessionId;
+                    appendMessage('assistant', data.data.reply);
+                    await loadSessions();
+                } else {
+                    appendMessage('assistant', `❌ 错误：${data.error}`);
+                }
+            } catch (err) {
+                removeTypingIndicator();
+                appendMessage('assistant', `❌ 网络错误：${err.message}\n\n请检查服务器连接。`);
+            }
+
+            isLoading = false;
+            document.getElementById('send-btn').disabled = false;
+            input.focus();
+        }
+
+        function appendMessage(role, content) {
+            const area = document.getElementById('messages-area');
+            area.insertAdjacentHTML('beforeend', createMessageHTML(role, content));
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const area = document.getElementById('messages-area');
+            area.insertAdjacentHTML('beforeend', `
+        <div class="message assistant" id="typing-indicator">
+          <div class="message-avatar">${currentAgent?.icon || '🤖'}</div>
+          <div class="message-content">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      `);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typing-indicator');
+            if (el) el.remove();
+        }
+
+        function scrollToBottom() {
+            const area = document.getElementById('messages-area');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // 快捷操作
+        function sendQuickAction(text) {
+            document.getElementById('chat-input').value = text;
+            sendMessage();
+        }
+
+        // 输入框事件
+        function handleInputKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResizeInput() {
+            const input = document.getElementById('chat-input');
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+        }
+
+        // 文件上传
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const badgeArea = document.getElementById('file-badge-area');
+            badgeArea.style.display = 'block';
+            badgeArea.innerHTML = `<span class="file-badge">📎 ${file.name} <span class="loading-spinner" style="width:14px;height:14px;"></span></span>`;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            if (currentSessionId) formData.append('sessionId', currentSessionId);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/upload/${agentCode}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    uploadedFileContent = data.data.parsedPreview;
+                    badgeArea.innerHTML = `<span class="file-badge">📎 ${file.name} (${(data.data.fileSize / 1024).toFixed(1)}KB) ✅ 已解析</span>`;
+                } else {
+                    badgeArea.innerHTML = `<span class="file-badge" style="color: var(--danger)">❌ ${file.name} 上传失败</span>`;
+                }
+            } catch (err) {
+                badgeArea.innerHTML = `<span class="file-badge" style="color: var(--danger)">❌ 上传失败: ${err.message}</span>`;
+            }
+
+            event.target.value = '';
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+
+</html>

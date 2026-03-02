@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>国能南宁AI智能体平台</title>
+  <meta name="description" content="国能南宁发电有限公司AI智能体集成平台，提供违章考核、人资绩效、任务分解、合规审核、生产经营等智能服务">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- 头部导航 -->
+  <header class="header">
+    <a href="/" class="header-logo">
+      <div class="logo-icon">🏭</div>
+      <div>
+        <h1>国能南宁AI智能体平台</h1>
+        <div class="subtitle">基于大模型的低代码智能体 MVP</div>
+      </div>
+    </a>
+    <nav class="header-nav">
+      <a href="/" class="nav-btn active" id="nav-home">🏠 门户首页</a>
+      <a href="/config.html" class="nav-btn" id="nav-config">⚙️ 系统配置</a>
+    </nav>
+  </header>
+
+  <!-- 门户内容 -->
+  <main class="portal-container">
+    <!-- Hero区域 -->
+    <section class="portal-hero">
+      <h2>AI智能体集成服务平台</h2>
+      <p>基于大模型技术，为电力企业提供智能化管理工具。覆盖安全管理、人力资源、行政管理、合规审核、生产经营五大业务场景。</p>
+    </section>
+
+    <!-- 统计数据 -->
+    <section class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">🤖</div>
+        <div>
+          <div class="stat-value" id="stat-agents">-</div>
+          <div class="stat-label">在线智能体</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">💬</div>
+        <div>
+          <div class="stat-value" id="stat-sessions">-</div>
+          <div class="stat-label">今日会话</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">📝</div>
+        <div>
+          <div class="stat-value" id="stat-messages">-</div>
+          <div class="stat-label">今日消息</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">📄</div>
+        <div>
+          <div class="stat-value" id="stat-files">-</div>
+          <div class="stat-label">处理文件</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 智能体列表 -->
+    <section class="agents-section">
+      <h3>智能体服务</h3>
+      <div class="agents-grid" id="agents-grid">
+        <!-- 动态加载 -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = '';
+
+    // 加载统计数据
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${API_BASE}/api/dashboard`);
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('stat-agents').textContent = data.data.agentCount;
+          document.getElementById('stat-sessions').textContent = data.data.todaySessions;
+          document.getElementById('stat-messages').textContent = data.data.todayMessages;
+          document.getElementById('stat-files').textContent = data.data.totalFiles;
+        }
+      } catch (err) {
+        console.error('加载统计数据失败:', err);
+      }
+    }
+
+    // 加载智能体列表
+    async function loadAgents() {
+      try {
+        const res = await fetch(`${API_BASE}/api/agents`);
+        const data = await res.json();
+        if (data.success) {
+          renderAgents(data.data);
+        }
+      } catch (err) {
+        console.error('加载智能体失败:', err);
+        document.getElementById('agents-grid').innerHTML = '<p style="color: var(--danger)">加载失败，请检查服务器连接</p>';
+      }
+    }
+
+    function renderAgents(agents) {
+      const grid = document.getElementById('agents-grid');
+      grid.innerHTML = agents.map(agent => `
+        <div class="agent-card" onclick="openAgent('${agent.code}')">
+          <div class="agent-card-header">
+            <div class="agent-card-icon ${agent.code}">
+              ${agent.icon}
+            </div>
+            <div>
+              <div class="agent-card-title">${agent.name}</div>
+              <div class="agent-card-category">${agent.category}</div>
+            </div>
+          </div>
+          <div class="agent-card-desc">${agent.description}</div>
+          <div class="agent-card-footer">
+            <div class="agent-status">在线就绪</div>
+            <button class="agent-enter-btn" onclick="event.stopPropagation(); openAgent('${agent.code}')">
+              进入对话 →
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openAgent(code) {
+      window.location.href = `/chat.html?agent=${code}`;
+    }
+
+    // 初始化
+    loadDashboard();
+    loadAgents();
+  </script>
+</body>
+</html>
