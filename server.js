@@ -16,6 +16,25 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 认证中间件
+const authenticateUser = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        // 如果是只读接口且是开发环境，可以放行或根据需求拦截
+        return next();
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error || !user) throw error;
+        req.user = user;
+        next();
+    } catch (err) {
+        res.status(401).json({ success: false, error: '认证失败' });
+    }
+};
+
 // 文件上传配置
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -71,8 +90,9 @@ app.get('/api/agents/:code', async (req, res) => {
 });
 
 // 获取会话列表
-app.get('/api/sessions/:agentCode', async (req, res) => {
+app.get('/api/sessions/:agentCode', authenticateUser, async (req, res) => {
     try {
+        const userId = req.user?.id;
         // 先获取智能体ID
         const { data: agent } = await supabase
             .from('agents')
@@ -82,11 +102,14 @@ app.get('/api/sessions/:agentCode', async (req, res) => {
 
         if (!agent) return res.json({ success: true, data: [] });
 
-        const { data, error } = await supabase
+        let query = supabase
             .from('sessions')
             .select('*')
-            .eq('agent_id', agent.id)
-            .order('updated_at', { ascending: false });
+            .eq('agent_id', agent.id);
+
+        if (userId) query = query.eq('user_id', userId);
+
+        const { data, error } = await query.order('updated_at', { ascending: false });
 
         if (error) throw error;
         res.json({ success: true, data: data });
@@ -97,8 +120,16 @@ app.get('/api/sessions/:agentCode', async (req, res) => {
 });
 
 // 获取消息列表
-app.get('/api/messages/:sessionId', async (req, res) => {
+app.get('/api/messages/:sessionId', authenticateUser, async (req, res) => {
     try {
+        const userId = req.user?.id;
+        // 校验该会话是否属于当前用户
+        if (userId) {
+            const { data: session } = await supabase.from('sessions').select('user_id').eq('id', req.params.sessionId).single();
+            if (session && session.user_id !== userId) {
+                return res.status(403).json({ success: false, error: '权限不足' });
+            }
+        }
         const { data, error } = await supabase
             .from('messages')
             .select('*')
@@ -114,10 +145,11 @@ app.get('/api/messages/:sessionId', async (req, res) => {
 });
 
 // 对话接口
-app.post('/api/chat/:agentCode', async (req, res) => {
+app.post('/api/chat/:agentCode', authenticateUser, async (req, res) => {
     try {
         const { agentCode } = req.params;
         const { sessionId, message } = req.body;
+        const userId = req.user?.id;
 
         // 获取智能体信息
         const { data: agent, error: agentError } = await supabase
@@ -128,13 +160,31 @@ app.post('/api/chat/:agentCode', async (req, res) => {
 
         if (agentError || !agent) return res.status(404).json({ success: false, error: '智能体不存在' });
 
+        // 0. 获取用户个人 LLM 配置 (如果有)
+        let userLLMConfig = null;
+        if (userId) {
+            const { data: configs } = await supabase
+                .from('system_configs')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (configs && configs.length > 0) {
+                userLLMConfig = {};
+                configs.forEach(c => {
+                    const key = c.config_key.replace('llm_', '');
+                    const map = { api_url: 'apiUrl', api_key: 'apiKey', model_name: 'modelName', temperature: 'temperature', max_tokens: 'maxTokens' };
+                    userLLMConfig[map[key] || key] = c.config_value;
+                });
+            }
+        }
+
         // 1. 获取或创建会话
         let sid = sessionId;
         if (!sid) {
             const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
             const { data: newSession, error: sessError } = await supabase
                 .from('sessions')
-                .insert([{ agent_id: agent.id, title }])
+                .insert([{ agent_id: agent.id, title, user_id: userId }])
                 .select()
                 .single();
 
@@ -179,8 +229,8 @@ app.post('/api/chat/:agentCode', async (req, res) => {
             contextMessages.push({ role: 'user', content: message });
         }
 
-        // 5. 调用LLM
-        const reply = await llmClient.chat(contextMessages, agentCode);
+        // 5. 调用LLM (传入可能存在的用户个人配置)
+        const reply = await llmClient.chat(contextMessages, agentCode, userLLMConfig);
 
         // 6. 保存助手回复并更新会话时间
         await Promise.all([
@@ -384,9 +434,18 @@ app.get('/api/data/compliance', async (req, res) => {
 });
 
 // 系统配置
-app.get('/api/config', async (req, res) => {
+app.get('/api/config', authenticateUser, async (req, res) => {
     try {
-        const { data, error } = await supabase.from('system_configs').select('*');
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.json({ success: true, data: [] }); // 未登录返回空
+        }
+
+        const { data, error } = await supabase
+            .from('system_configs')
+            .select('*')
+            .eq('user_id', userId);
+
         if (error) throw error;
         res.json({ success: true, data: data });
     } catch (err) {
@@ -394,31 +453,48 @@ app.get('/api/config', async (req, res) => {
     }
 });
 
-app.post('/api/config', async (req, res) => {
+app.post('/api/config', authenticateUser, async (req, res) => {
     try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ success: false, error: '未登录' });
+
         const { configs } = req.body;
-        const upsertData = Object.entries(configs).map(([k, v]) => ({ config_key: k, config_value: v }));
+        const upsertData = Object.entries(configs).map(([k, v]) => ({
+            user_id: userId,
+            config_key: k,
+            config_value: v
+        }));
 
         const { error } = await supabase.from('system_configs').upsert(upsertData);
         if (error) throw error;
 
-        // 同步刷新LLM客户端配置
-        llmClient.updateConfig({
-            apiUrl: configs.llm_api_url,
-            apiKey: configs.llm_api_key,
-            modelName: configs.llm_model_name,
-            temperature: parseFloat(configs.llm_temperature || '0.7'),
-            maxTokens: parseInt(configs.llm_max_tokens || '4096'),
-        });
-        res.json({ success: true, message: '配置已保存' });
+        res.json({ success: true, message: '个人配置已保存' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-app.post('/api/config/test', async (req, res) => {
+app.post('/api/config/test', authenticateUser, async (req, res) => {
     try {
-        const result = await llmClient.testConnection();
+        const userId = req.user?.id;
+        // 获取当前请求用户的配置快照进行测试
+        const { data: configs } = await supabase
+            .from('system_configs')
+            .select('*')
+            .eq('user_id', userId);
+
+        let testConfig = null;
+        if (configs && configs.length > 0) {
+            testConfig = {};
+            configs.forEach(c => {
+                const key = c.config_key.replace('llm_', '');
+                const map = { api_url: 'apiUrl', api_key: 'apiKey', model_name: 'modelName', temperature: 'temperature', max_tokens: 'maxTokens' };
+                testConfig[map[key] || key] = c.config_value;
+            });
+        }
+
+        // 如果用户没配置，测试连接默认会失败或由于 apiKey 缺失使用 mock
+        const result = await llmClient.testConnection(testConfig);
         res.json({ success: true, data: result });
     } catch (err) {
         res.json({ success: true, data: { success: false, message: err.message } });
@@ -444,8 +520,12 @@ app.use((err, req, res, next) => {
 // 启动服务器
 async function startServer() {
     try {
-        // 从 Supabase 加载初始配置
-        const { data: configs } = await supabase.from('system_configs').select('*');
+        // 从 Supabase 加载初始全局配置 (user_id 为 null 的记录)
+        const { data: configs } = await supabase
+            .from('system_configs')
+            .select('*')
+            .filter('user_id', 'is', null);
+
         if (configs) {
             const configObj = {};
             configs.forEach(c => configObj[c.config_key] = c.config_value);

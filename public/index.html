@@ -79,10 +79,20 @@
   <script>
     const API_BASE = '';
 
+    // API 请求封装
+    async function apiFetch(url, options = {}) {
+      const { data: { session } } = await window.supabase.auth.getSession();
+      const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${session?.access_token}`
+      };
+      return fetch(url, { ...options, headers });
+    }
+
     // 加载统计数据
     async function loadDashboard() {
       try {
-        const res = await fetch(`${API_BASE}/api/dashboard`);
+        const res = await apiFetch(`${API_BASE}/api/dashboard`);
         const data = await res.json();
         if (data.success) {
           document.getElementById('stat-agents').textContent = data.data.agentCount;
@@ -98,7 +108,7 @@
     // 加载智能体列表
     async function loadAgents() {
       try {
-        const res = await fetch(`${API_BASE}/api/agents`);
+        const res = await apiFetch(`${API_BASE}/api/agents`);
         const data = await res.json();
         if (data.success) {
           renderAgents(data.data);

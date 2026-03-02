@@ -23,59 +23,43 @@ class LLMClient {
         });
     }
 
-    async testConnection() {
-        if (!this.config.apiKey || !this.config.apiUrl) {
-            return { success: false, message: '未配置API地址或密钥。当前为模拟演示模式。' };
-        }
-
+    async testConnection(testConfig = null) {
         try {
-            const response = await fetch(this.config.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: this.config.modelName,
-                    messages: [{ role: 'user', content: '你好' }],
-                    max_tokens: 10,
-                }),
-                signal: AbortSignal.timeout(15000),
-            });
-
-            if (response.ok) {
-                return { success: true, message: `连接成功！模型: ${this.config.modelName}` };
-            } else {
-                const err = await response.text();
-                return { success: false, message: `API返回错误(${response.status}): ${err.substring(0, 200)}` };
+            const result = await this.chat([{ role: 'user', content: 'hi' }], 'violation', testConfig);
+            if (result && !result.includes('❌') && !result.includes('错误')) {
+                return { success: true, message: '连接成功：' + result.substring(0, 50) + '...' };
             }
+            return { success: false, message: result };
         } catch (err) {
-            return { success: false, message: `连接失败: ${err.message}` };
+            return { success: false, message: err.message };
         }
     }
 
-    async chat(messages, agentCode) {
-        // 如果配置了API，调用真实大模型
-        if (this.config.apiKey && this.config.apiUrl) {
-            return await this.callRealAPI(messages);
+    async chat(messages, agentCode, userConfig = null) {
+        // 使用传入的个人配置，或默认全局配置
+        const activeConfig = userConfig || this.config;
+
+        // 如果有 API KEY，调用真实大模型
+        if (activeConfig.apiKey && activeConfig.apiUrl) {
+            return await this.callRealAPI(messages, activeConfig);
         }
         // 否则使用模拟响应
         return this.getMockResponse(messages, agentCode);
     }
 
-    async callRealAPI(messages) {
+    async callRealAPI(messages, config) {
         try {
-            const response = await fetch(this.config.apiUrl, {
+            const response = await fetch(config.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.apiKey}`,
+                    'Authorization': `Bearer ${config.apiKey}`,
                 },
                 body: JSON.stringify({
-                    model: this.config.modelName,
+                    model: config.modelName,
                     messages,
-                    temperature: this.config.temperature,
-                    max_tokens: this.config.maxTokens,
+                    temperature: parseFloat(config.temperature) || 0.7,
+                    max_tokens: parseInt(config.maxTokens) || 4096,
                 }),
                 signal: AbortSignal.timeout(60000),
             });

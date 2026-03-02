@@ -22,6 +22,8 @@
         <nav class="header-nav">
             <a href="/" class="nav-btn">← 返回门户</a>
             <a href="/config.html" class="nav-btn">⚙️ 配置</a>
+            <button class="nav-btn" onclick="logout()"
+                style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">🚪 退出</button>
         </nav>
     </header>
 
@@ -84,6 +86,17 @@
 
     <script>
         const API_BASE = '';
+
+        // API 请求封装
+        async function apiFetch(url, options = {}) {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            const headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${session?.access_token}`
+            };
+            return fetch(url, { ...options, headers });
+        }
+
         let currentAgent = null;
         let currentSessionId = null;
         let isLoading = false;
@@ -133,14 +146,27 @@
 
         // 初始化
         async function init() {
+            // 1. 检查登录状态
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '/login.html';
+                return;
+            }
+
             await loadAgentInfo();
             await loadSessions();
+        }
+
+        // 退出登录
+        async function logout() {
+            await window.supabase.auth.signOut();
+            window.location.href = '/login.html';
         }
 
         // 加载智能体信息
         async function loadAgentInfo() {
             try {
-                const res = await fetch(`${API_BASE}/api/agents/${agentCode}`);
+                const res = await apiFetch(`${API_BASE}/api/agents/${agentCode}`);
                 const data = await res.json();
                 if (data.success) {
                     currentAgent = data.data;
@@ -168,7 +194,7 @@
         // 加载会话列表
         async function loadSessions() {
             try {
-                const res = await fetch(`${API_BASE}/api/sessions/${agentCode}`);
+                const res = await apiFetch(`${API_BASE}/api/sessions/${agentCode}`);
                 const data = await res.json();
                 if (data.success) {
                     renderSessions(data.data);
@@ -224,7 +250,7 @@
         // 加载消息
         async function loadMessages(sessionId) {
             try {
-                const res = await fetch(`${API_BASE}/api/messages/${sessionId}`);
+                const res = await apiFetch(`${API_BASE}/api/messages/${sessionId}`);
                 const data = await res.json();
                 if (data.success) {
                     renderMessages(data.data);
@@ -302,7 +328,7 @@
             showTypingIndicator();
 
             try {
-                const res = await fetch(`${API_BASE}/api/chat/${agentCode}`, {
+                const res = await apiFetch(`${API_BASE}/api/chat/${agentCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -398,7 +424,7 @@
             if (currentSessionId) formData.append('sessionId', currentSessionId);
 
             try {
-                const res = await fetch(`${API_BASE}/api/upload/${agentCode}`, {
+                const res = await apiFetch(`${API_BASE}/api/upload/${agentCode}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -419,6 +445,8 @@
         // 初始化
         init();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/supabase-config.js"></script>
 </body>
 
 </html>
