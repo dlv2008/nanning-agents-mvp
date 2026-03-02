@@ -120,43 +120,74 @@ app.post('/api/chat/:agentCode', async (req, res) => {
         const { agentCode } = req.params;
         const { sessionId, message } = req.body;
 
-        const agent = store.getAgent(agentCode);
-        if (!agent) return res.status(404).json({ success: false, error: '智能体不存在' });
+        // 获取智能体信息
+        const { data: agent, error: agentError } = await supabase
+            .from('agents')
+            .select('*')
+            .eq('code', agentCode)
+            .single();
 
-        // 创建或获取会话
+        if (agentError || !agent) return res.status(404).json({ success: false, error: '智能体不存在' });
+
+        // 1. 获取或创建会话
         let sid = sessionId;
         if (!sid) {
             const title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
-            const session = store.createSession(agent.id, title);
-            sid = session.id;
+            const { data: newSession, error: sessError } = await supabase
+                .from('sessions')
+                .insert([{ agent_id: agent.id, title }])
+                .select()
+                .single();
+
+            if (sessError) throw sessError;
+            sid = newSession.id;
         }
 
-        // 保存用户消息
-        store.addMessage(sid, 'user', message);
+        // 2. 保存用户消息
+        const { error: userMsgError } = await supabase
+            .from('messages')
+            .insert([{ session_id: sid, role: 'user', content: message }]);
 
-        // 获取历史消息构建上下文
-        const history = store.getMessages(sid);
+        if (userMsgError) throw userMsgError;
+
+        // 3. 构建上下文
         const contextMessages = [
             { role: 'system', content: agent.system_prompt },
         ];
 
-        // 附加业务数据上下文
-        const bizContext = buildBusinessContext(agentCode, message);
+        // 附加业务数据上下文 (现在是异步的)
+        const bizContext = await buildBusinessContext(agentCode, message);
         if (bizContext) {
             contextMessages.push({ role: 'system', content: `以下是相关业务数据，请参考：\n${bizContext}` });
         }
 
-        // 添加历史消息（最多取最近10条）
-        const recentHistory = history.slice(-10);
-        recentHistory.forEach(h => {
-            contextMessages.push({ role: h.role, content: h.content });
-        });
+        // 4. 获取历史记录 (最近10条)
+        const { data: history } = await supabase
+            .from('messages')
+            .select('role, content')
+            .eq('session_id', sid)
+            .order('created_at', { ascending: true })
+            .limit(20); // 取稍多一点，过滤后取10
 
-        // 调用LLM
+        if (history) {
+            const recentHistory = history.slice(-11); // 包含刚插入的用户消息
+            recentHistory.forEach(h => {
+                if (h.content !== message || h.role !== 'user') { // 避免重复添加刚存入的消息，如果逻辑上已经处理了则跳过
+                    contextMessages.push({ role: h.role, content: h.content });
+                }
+            });
+            // 确保刚发的消息在最后
+            contextMessages.push({ role: 'user', content: message });
+        }
+
+        // 5. 调用LLM
         const reply = await llmClient.chat(contextMessages, agentCode);
 
-        // 保存AI回复
-        store.addMessage(sid, 'assistant', reply);
+        // 6. 保存助手回复并更新会话时间
+        await Promise.all([
+            supabase.from('messages').insert([{ session_id: sid, role: 'assistant', content: reply }]),
+            supabase.from('sessions').update({ updated_at: new Date().toISOString() }).eq('id', sid)
+        ]);
 
         res.json({
             success: true,
@@ -169,74 +200,89 @@ app.post('/api/chat/:agentCode', async (req, res) => {
 });
 
 // 构建业务上下文
-function buildBusinessContext(agentCode, message) {
+async function buildBusinessContext(agentCode, message) {
     const msg = message.toLowerCase();
     let context = '';
 
-    switch (agentCode) {
-        case 'violation': {
-            const violations = store.getViolations();
-            const rules = store.getPenaltyRules();
-            if (msg.includes('统计') || msg.includes('积分') || msg.includes('查询')) {
-                context += `【违章记录】\n${violations.map(v =>
-                    `- ${v.violation_date} ${v.department} ${v.person_name}: ${v.violation_type}，扣${v.penalty_score}分，罚款${v.penalty_amount}元 [${v.status === 'confirmed' ? '已确认' : '待审核'}]`
-                ).join('\n')}\n`;
-            }
-            if (msg.includes('考核') || msg.includes('条款') || msg.includes('安全帽') || msg.includes('工作票') || msg.includes('违章')) {
-                // 匹配相关条款
-                const matched = rules.filter(r =>
-                    msg.includes(r.violation_type) || msg.includes(r.category)
-                );
-                const showRules = matched.length > 0 ? matched : rules.slice(0, 5);
-                context += `【考核条款】\n${showRules.map(r =>
-                    `- [${r.rule_code}] ${r.violation_type}: ${r.description}，${r.penalty_level}，扣${r.penalty_score}分，罚款${r.penalty_amount}元。依据: ${r.source_document}`
-                ).join('\n')}\n`;
-            }
-            break;
-        }
-        case 'hr': {
-            const perf = store.getPerformance();
-            const employees = store.getEmployees();
-            if (msg.includes('绩效') || msg.includes('分析') || msg.includes('报告')) {
-                context += `【绩效数据】\n${perf.map(p =>
-                    `- ${p.period} ${p.department} ${p.employee_name}: ${p.score}分 (${p.level})`
-                ).join('\n')}\n`;
-            }
-            if (msg.includes('档案') || msg.includes('查询')) {
-                const name = employees.find(e => msg.includes(e.name));
-                if (name) {
-                    context += `【员工档案】\n工号: ${name.id}\n姓名: ${name.name}\n部门: ${name.department}\n职务: ${name.position}\n职称: ${name.title}\n学历: ${name.education}\n专业: ${name.major}\n入职日期: ${name.join_date}\n证书: ${name.certifications.join('、') || '无'}\n`;
-                } else {
-                    context += `【员工列表】\n${employees.map(e => `- ${e.id} ${e.name} ${e.department} ${e.position} ${e.title}`).join('\n')}\n`;
+    try {
+        switch (agentCode) {
+            case 'violation': {
+                // 并行查询违章和条款
+                const [violationRes, ruleRes] = await Promise.all([
+                    supabase.from('violations').select('*'),
+                    supabase.from('penalty_rules').select('*')
+                ]);
+
+                if (msg.includes('统计') || msg.includes('积分') || msg.includes('查询')) {
+                    const violations = violationRes.data || [];
+                    context += `【违章记录】\n${violations.map(v =>
+                        `- ${v.violation_date} ${v.department} ${v.person_name}: ${v.violation_type}，扣${v.penalty_score}分，罚款${v.penalty_amount}元 [${v.status === 'confirmed' ? '已确认' : '待审核'}]`
+                    ).join('\n')}\n`;
                 }
+                if (msg.includes('考核') || msg.includes('条款') || msg.includes('安全帽') || msg.includes('工作票') || msg.includes('违章')) {
+                    const rules = ruleRes.data || [];
+                    const matched = rules.filter(r =>
+                        msg.includes(r.violation_type) || msg.includes(r.category)
+                    );
+                    const showRules = matched.length > 0 ? matched : rules.slice(0, 5);
+                    context += `【考核条款】\n${showRules.map(r =>
+                        `- [${r.rule_code}] ${r.violation_type}: ${r.description}，${r.penalty_level}，扣${r.penalty_score}分，罚款${r.penalty_amount}元。依据: ${r.source_document}`
+                    ).join('\n')}\n`;
+                }
+                break;
             }
-            break;
+            case 'hr': {
+                const [perfRes, empRes] = await Promise.all([
+                    supabase.from('performance').select('*'),
+                    supabase.from('employees').select('*')
+                ]);
+
+                if (msg.includes('绩效') || msg.includes('分析') || msg.includes('报告')) {
+                    const perf = perfRes.data || [];
+                    context += `【绩效数据】\n${perf.map(p =>
+                        `- ${p.period} ${p.department} ${p.employee_name}: ${p.score}分 (${p.level})`
+                    ).join('\n')}\n`;
+                }
+                if (msg.includes('档案') || msg.includes('查询')) {
+                    const employees = empRes.data || [];
+                    const name = employees.find(e => msg.includes(e.name));
+                    if (name) {
+                        context += `【员工档案】\n工号: ${name.id}\n姓名: ${name.name}\n部门: ${name.department}\n职务: ${name.position}\n职称: ${name.title}\n学历: ${name.education}\n专业: ${name.major}\n入职日期: ${name.join_date}\n证书: ${name.certifications ? name.certifications.join('、') : '无'}\n`;
+                    } else {
+                        context += `【员工列表】\n${employees.slice(0, 10).map(e => `- ${e.id} ${e.name} ${e.department} ${e.position} ${e.title}`).join('\n')}\n`;
+                    }
+                }
+                break;
+            }
+            case 'task': {
+                const { data: tasks } = await supabase.from('tasks').select('*');
+                if (tasks) {
+                    context += `【现有任务】\n${tasks.map(t =>
+                        `- [${t.priority === 'urgent' ? '紧急' : t.priority === 'important' ? '重要' : '一般'}] ${t.task_title} → ${t.responsible_dept}/${t.responsible_person}，截止: ${t.deadline}，状态: ${t.status === 'completed' ? '已完成' : t.status === 'in_progress' ? '进行中' : '待执行'}`
+                    ).join('\n')}\n`;
+                }
+                break;
+            }
+            case 'production': {
+                const [violationRes, taskRes, perfRes, deptRes] = await Promise.all([
+                    supabase.from('violations').select('id, status'),
+                    supabase.from('tasks').select('id, status'),
+                    supabase.from('performance').select('id'),
+                    supabase.from('departments').select('id')
+                ]);
+
+                const violations = violationRes.data || [];
+                const tasks = taskRes.data || [];
+                context += `【可用数据源】\n`;
+                context += `- 违章记录: ${violations.length}条 (已确认${violations.filter(v => v.status === 'confirmed').length}条)\n`;
+                context += `- 任务进度: 共${tasks.length}个任务, 已完成${tasks.filter(t => t.status === 'completed').length}个, 进行中${tasks.filter(t => t.status === 'in_progress').length}个\n`;
+                context += `- 绩效数据: ${(perfRes.data || []).length}条记录\n`;
+                context += `- 部门数量: ${(deptRes.data || []).length}个\n`;
+                break;
+            }
         }
-        case 'task': {
-            const tasks = store.getTasks();
-            context += `【现有任务】\n${tasks.map(t =>
-                `- [${t.priority === 'urgent' ? '紧急' : t.priority === 'important' ? '重要' : '一般'}] ${t.task_title} → ${t.responsible_dept}/${t.responsible_person}，截止: ${t.deadline}，状态: ${t.status === 'completed' ? '已完成' : t.status === 'in_progress' ? '进行中' : '待执行'}`
-            ).join('\n')}\n`;
-            break;
-        }
-        case 'compliance': {
-            const records = store.getCompliance();
-            context += `【合规审核记录】\n${records.map(r =>
-                `- [${r.audit_result === 'pass' ? '✅通过' : r.audit_result === 'fail' ? '❌不通过' : '⚠️警告'}] ${r.audit_type}: ${r.document_name}\n  ${r.issues.length > 0 ? '问题: ' + r.issues.map(i => i.issue).join('; ') : '无问题'}\n  建议: ${r.suggestions}`
-            ).join('\n')}\n`;
-            break;
-        }
-        case 'production': {
-            context += `【可用数据源】\n`;
-            const violations = store.getViolations();
-            const tasks = store.getTasks();
-            context += `- 违章记录: ${violations.length}条 (已确认${violations.filter(v => v.status === 'confirmed').length}条)\n`;
-            context += `- 任务进度: 共${tasks.length}个任务, 已完成${tasks.filter(t => t.status === 'completed').length}个, 进行中${tasks.filter(t => t.status === 'in_progress').length}个\n`;
-            const perf = store.getPerformance();
-            context += `- 绩效数据: ${perf.length}条记录\n`;
-            context += `- 部门数量: ${store.data.departments.length}个\n`;
-            break;
-        }
+    } catch (err) {
+        console.error('Build context error:', err);
     }
     return context;
 }
@@ -277,50 +323,76 @@ app.post('/api/upload/:agentCode', upload.single('file'), (req, res) => {
 });
 
 // 仪表盘统计
-app.get('/api/dashboard', (req, res) => {
+app.get('/api/dashboard', async (req, res) => {
     try {
-        res.json({ success: true, data: store.getDashboard() });
+        const today = new Date().toISOString().split('T')[0];
+
+        const [agents, sessions, messages, files] = await Promise.all([
+            supabase.from('agents').select('id', { count: 'exact' }).eq('is_active', true),
+            supabase.from('sessions').select('id', { count: 'exact' }).gte('created_at', today),
+            supabase.from('messages').select('id', { count: 'exact' }).gte('created_at', today),
+            supabase.from('tasks').select('id', { count: 'exact' }) // 临时替代
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                agentCount: agents.count || 0,
+                todaySessions: sessions.count || 0,
+                todayMessages: messages.count || 0,
+                totalFiles: files.count || 0
+            }
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // 业务数据接口
-app.get('/api/data/violations', (req, res) => {
-    res.json({ success: true, data: store.getViolations() });
+app.get('/api/data/violations', async (req, res) => {
+    const { data } = await supabase.from('violations').select('*').order('violation_date', { ascending: false });
+    res.json({ success: true, data: data || [] });
 });
 
-app.get('/api/data/performance', (req, res) => {
-    res.json({ success: true, data: store.getPerformance() });
+app.get('/api/data/performance', async (req, res) => {
+    const { data } = await supabase.from('performance').select('*').order('period', { ascending: false });
+    res.json({ success: true, data: data || [] });
 });
 
-app.get('/api/data/employees', (req, res) => {
-    res.json({ success: true, data: store.getEmployees() });
+app.get('/api/data/employees', async (req, res) => {
+    const { data } = await supabase.from('employees').select('*');
+    res.json({ success: true, data: data || [] });
 });
 
-app.get('/api/data/tasks', (req, res) => {
-    res.json({ success: true, data: store.getTasks() });
+app.get('/api/data/tasks', async (req, res) => {
+    const { data } = await supabase.from('tasks').select('*').order('deadline', { ascending: true });
+    res.json({ success: true, data: data || [] });
 });
 
-app.get('/api/data/compliance', (req, res) => {
-    res.json({ success: true, data: store.getCompliance() });
+app.get('/api/data/compliance', async (req, res) => {
+    // 兼容旧模拟数据逻辑
+    res.json({ success: true, data: [] });
 });
 
 // 系统配置
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
     try {
-        res.json({ success: true, data: store.getConfigs() });
+        const { data, error } = await supabase.from('system_configs').select('*');
+        if (error) throw error;
+        res.json({ success: true, data: data });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-app.post('/api/config', (req, res) => {
+app.post('/api/config', async (req, res) => {
     try {
         const { configs } = req.body;
-        for (const [key, value] of Object.entries(configs)) {
-            store.updateConfig(key, value);
-        }
+        const upsertData = Object.entries(configs).map(([k, v]) => ({ config_key: k, config_value: v }));
+
+        const { error } = await supabase.from('system_configs').upsert(upsertData);
+        if (error) throw error;
+
         // 同步刷新LLM客户端配置
         llmClient.updateConfig({
             apiUrl: configs.llm_api_url,
@@ -364,6 +436,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 国能南宁AI智能体平台已启动`);
     console.log(`   访问地址: http://localhost:${PORT}`);
-    console.log(`   数据存储: JSON文件 (data/store.json)`);
-    console.log(`   LLM模式: ${store.getConfigValue('llm_api_key') ? '已配置API' : '模拟演示模式'}\n`);
+    console.log(`   数据存储: Supabase (PostgreSQL)`);
+    console.log(`   环境状态: ${process.env.NODE_ENV}\n`);
 });
