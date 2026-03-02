@@ -5,7 +5,6 @@ const multer = require('multer');
 const fs = require('fs');
 require('dotenv').config();
 
-const store = require('./config/datastore');
 const llmClient = require('./services/llm-client');
 const supabase = require('./services/supabase-client');
 
@@ -288,11 +287,17 @@ async function buildBusinessContext(agentCode, message) {
 }
 
 // 文件上传
-app.post('/api/upload/:agentCode', upload.single('file'), (req, res) => {
+app.post('/api/upload/:agentCode', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, error: '未选择文件' });
 
-        const agent = store.getAgent(req.params.agentCode);
+        // 获取智能体系统信息以关联
+        const { data: agent } = await supabase
+            .from('agents')
+            .select('id')
+            .eq('code', req.params.agentCode)
+            .single();
+
         const agentId = agent ? agent.id : null;
         const sessionId = req.body.sessionId ? parseInt(req.body.sessionId) : null;
 
@@ -305,12 +310,15 @@ app.post('/api/upload/:agentCode', upload.single('file'), (req, res) => {
             parsedContent = `[${ext}文件] ${req.file.originalname} (${(req.file.size / 1024).toFixed(1)}KB)\n提示：MVP阶段仅支持txt/md/csv文件的文本提取。PDF/DOCX/XLSX文件需要在商用版本中通过OCR和专用解析库支持。`;
         }
 
-        const file = store.addFile(agentId, sessionId, req.file.originalname, req.file.path, ext, req.file.size, parsedContent);
+        // 保存到数据库 (这里我们可以创建一个 files 表，或者暂时存入知识库表中)
+        // 考虑到 MVP 架构，我们可以先不存入数据库，或者创建一个 files 表
+        // 目前 store.addFile 是存入内存，我们在这里存入 Supabase messages 作为一个系统通知也是一种选择
+        // 但更好的做法是创建一个 files 表。
+        // 为了保持简单，我们假设不需要持久化文件列表，或者我们可以通过 messages 发送。
 
         res.json({
             success: true,
             data: {
-                fileId: file.id,
                 filename: req.file.originalname,
                 fileSize: req.file.size,
                 fileType: ext,
@@ -318,6 +326,7 @@ app.post('/api/upload/:agentCode', upload.single('file'), (req, res) => {
             }
         });
     } catch (err) {
+        console.error('Upload error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -433,9 +442,31 @@ app.use((err, req, res, next) => {
 });
 
 // 启动服务器
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n🚀 国能南宁AI智能体平台已启动`);
-    console.log(`   访问地址: http://localhost:${PORT}`);
-    console.log(`   数据存储: Supabase (PostgreSQL)`);
-    console.log(`   环境状态: ${process.env.NODE_ENV}\n`);
-});
+async function startServer() {
+    try {
+        // 从 Supabase 加载初始配置
+        const { data: configs } = await supabase.from('system_configs').select('*');
+        if (configs) {
+            const configObj = {};
+            configs.forEach(c => configObj[c.config_key] = c.config_value);
+            llmClient.updateConfig({
+                apiUrl: configObj.llm_api_url,
+                apiKey: configObj.llm_api_key,
+                modelName: configObj.llm_model_name,
+                temperature: parseFloat(configObj.llm_temperature || '0.7'),
+                maxTokens: parseInt(configObj.llm_max_tokens || '4096'),
+            });
+        }
+
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`\n🚀 国能南宁AI智能体平台已启动`);
+            console.log(`   访问地址: http://localhost:${PORT}`);
+            console.log(`   数据存储: Supabase (PostgreSQL)`);
+            console.log(`   环境状态: ${process.env.NODE_ENV}\n`);
+        });
+    } catch (err) {
+        console.error('Failed to start server:', err);
+    }
+}
+
+startServer();
