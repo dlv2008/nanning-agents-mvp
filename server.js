@@ -386,20 +386,25 @@ app.get('/api/dashboard', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
 
-        const [agents, sessions, messages, files] = await Promise.all([
+        const [agentsRes, sessionsRes, messagesRes, filesRes] = await Promise.all([
             supabase.from('agents').select('id', { count: 'exact' }).eq('is_active', true),
             supabase.from('sessions').select('id', { count: 'exact' }).gte('created_at', today),
             supabase.from('messages').select('id', { count: 'exact' }).gte('created_at', today),
             supabase.from('tasks').select('id', { count: 'exact' }) // 临时替代
         ]);
 
+        // 检查是否有查询报错
+        if (agentsRes.error) throw agentsRes.error;
+        if (sessionsRes.error) throw sessionsRes.error;
+        if (messagesRes.error) throw messagesRes.error;
+
         res.json({
             success: true,
             data: {
-                agentCount: agents.count || 0,
-                todaySessions: sessions.count || 0,
-                todayMessages: messages.count || 0,
-                totalFiles: files.count || 0
+                agentCount: agentsRes.count || 0,
+                todaySessions: sessionsRes.count || 0,
+                todayMessages: messagesRes.count || 0,
+                totalFiles: filesRes.count || 0
             }
         });
     } catch (err) {
