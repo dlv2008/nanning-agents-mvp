@@ -53,21 +53,45 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}   # 使用 SSH 密钥进行认证
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          # 定义 Github 加速代理地址，防止国内服务器遇到 GnuTLS TLS 连接重置错误 (error -110)
-          PROXY_URL="https://ghp.ci/https://github.com/${{ github.repository }}.git"
+          # 动态尝试多个 Github 加速节点，避免单一节点挂掉
+          PROXY_URLS=(
+            "https://kkgithub.com/${{ github.repository }}.git"
+            "https://github.com/${{ github.repository }}.git"
+          )
 
-          # 1. 检查根目录是否是一个正常的 Git 仓库，如果不是则清除并重新克隆
+          # 1. 检查根目录是否是一个正常的 Git 仓库，如果不是则清除
           if [ ! -d "/home/dlv/nanning_agents_mvp/.git" ]; then
             echo "目标目录不存在或非有效仓库，即将重新克隆..."
             rm -rf /home/dlv/nanning_agents_mvp || true
-            git clone $PROXY_URL /home/dlv/nanning_agents_mvp
+            # 尝试依次用不同源克隆
+            for URL in "${PROXY_URLS[@]}"; do
+              echo "正在尝试克隆: $URL"
+              if git clone $URL /home/dlv/nanning_agents_mvp; then
+                cd /home/dlv/nanning_agents_mvp
+                git remote set-url origin $URL
+                SUCCESS=1
+                break
+              fi
+            done
+          else
+            cd /home/dlv/nanning_agents_mvp
+            # 尝试依次用不同源拉取最新代码
+            for URL in "${PROXY_URLS[@]}"; do
+              echo "正在尝试拉取: $URL"
+              git remote set-url origin $URL
+              if git pull origin main; then
+                SUCCESS=1
+                break
+              fi
+            done
           fi
-          
+
+          if [ "$SUCCESS" != "1" ]; then
+            echo "所有 GitHub 节点拉取代码均失败，请检查服务器网络！"
+            exit 1
+          fi
+
           cd /home/dlv/nanning_agents_mvp
-          
-          # 2. 强制绑定代理线路并拉取最新代码
-          git remote set-url origin $PROXY_URL
-          git pull origin main
           
           # 3. 给自动化脚本添加执行权限
           chmod +x deploy/run_server.sh
