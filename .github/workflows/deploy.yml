@@ -50,7 +50,7 @@ jobs:
       with:
         host: ${{ secrets.SERVER_HOST }}     # e.g., www.trendbot.cn
         username: ${{ secrets.SERVER_USER }} # e.g., root or dlv
-        password: ${{ secrets.SERVER_PASSWORD }} # or use key: ${{ secrets.SERVER_SSH_KEY }}
+        key: ${{ secrets.SERVER_SSH_KEY }}   # 使用 SSH 密钥进行认证
         port: ${{ secrets.SERVER_PORT }}
         script: |
           # 1. 检查根目录，如不存在则创建
