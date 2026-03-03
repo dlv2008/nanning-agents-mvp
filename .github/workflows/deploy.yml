@@ -46,7 +46,7 @@ jobs:
         host: ${{ secrets.SERVER_HOST }}     # e.g., www.trendbot.cn
         username: ${{ secrets.SERVER_USER }} # e.g., root or dlv
         password: ${{ secrets.SERVER_PASSWORD }} # or use key: ${{ secrets.SERVER_SSH_KEY }}
-        port: 22
+        port: ${{ secrets.SERVER_PORT }}
         script: |
           cd /path/to/your/nanning_agents_mvp
           git pull origin main
