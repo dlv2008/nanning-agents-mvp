@@ -64,7 +64,7 @@ authForm.addEventListener('submit', async (e) => {
 
         if (result.data.session) {
             // 登录成功
-            window.location.href = '/';
+            window.location.href = './index.html';
         }
     } catch (err) {
         errorMsg.textContent = `操作失败: ${err.message}`;
@@ -79,7 +79,7 @@ authForm.addEventListener('submit', async (e) => {
 async function checkAuth() {
     const { data: { session } } = await window.supabase.auth.getSession();
     if (session) {
-        window.location.href = '/';
+        window.location.href = './index.html';
     }
 }
 

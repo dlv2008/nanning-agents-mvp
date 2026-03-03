@@ -9,7 +9,7 @@ const llmClient = require('./services/llm-client');
 const supabase = require('./services/supabase-client');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8016;
 
 // 中间件
 app.use(cors());

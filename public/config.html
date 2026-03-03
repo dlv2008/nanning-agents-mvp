@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>系统配置 - 国能南宁AI平台</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="./css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/supabase-config.js"></script>
-    <script src="/js/ui.js"></script>
+    <script src="./js/supabase-config.js"></script>
+    <script src="./js/ui.js"></script>
 </head>
 
 <body>
     <!-- 头部 -->
     <header class="header">
-        <a href="/" class="header-logo">
+        <a href="./index.html" class="header-logo">
             <div class="logo-icon">🏭</div>
             <div>
                 <h1>国能南宁AI智能体平台</h1>
@@ -25,8 +25,8 @@
             <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
             <button class="nav-btn" onclick="logout()"
                 style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">🚪 退出</button>
-            <a href="/" class="nav-btn">← 返回门户</a>
-            <a href="/config.html" class="nav-btn active">⚙️ 系统配置</a>
+            <a href="./index.html" class="nav-btn">← 返回门户</a>
+            <a href="./config.html" class="nav-btn active">⚙️ 系统配置</a>
         </nav>
     </header>
 
@@ -98,7 +98,7 @@
     </main>
 
     <script>
-        const API_BASE = '';
+        const API_BASE = window.location.pathname.includes('/nanning_agents_mvp') ? '/nanning_agents_mvp' : '';
 
         // API 请求封装
         async function apiFetch(url, options = {}) {
@@ -114,7 +114,7 @@
         async function init() {
             const { data: { session } } = await window.supabase.auth.getSession();
             if (!session) {
-                window.location.href = '/login.html';
+                window.location.href = './login.html';
                 return;
             }
 
@@ -125,7 +125,7 @@
 
         async function logout() {
             await window.supabase.auth.signOut();
-            window.location.href = '/login.html';
+            window.location.href = './login.html';
         }
 
         async function loadConfig() {

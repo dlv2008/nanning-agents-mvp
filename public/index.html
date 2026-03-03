@@ -6,16 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>国能南宁AI智能体平台</title>
   <meta name="description" content="国能南宁发电有限公司AI智能体集成平台，提供违章考核、人资绩效、任务分解、合规审核、生产经营等智能服务">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-config.js"></script>
-  <script src="/js/ui.js"></script>
+  <script src="./js/supabase-config.js"></script>
+  <script src="./js/ui.js"></script>
 </head>
 
 <body>
   <!-- 头部导航 -->
   <header class="header">
-    <a href="/" class="header-logo">
+    <a href="./index.html" class="header-logo">
       <div class="logo-icon">🏭</div>
       <div>
         <h1>国能南宁AI智能体平台</h1>
@@ -24,8 +24,8 @@
     </a>
     <nav class="header-nav">
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
-      <a href="/" class="nav-btn active" id="nav-home">🏠 门户首页</a>
-      <a href="/config.html" class="nav-btn" id="nav-config">⚙️ 系统配置</a>
+      <a href="./index.html" class="nav-btn active" id="nav-home">🏠 门户首页</a>
+      <a href="./config.html" class="nav-btn" id="nav-config">⚙️ 系统配置</a>
       <button class="nav-btn" onclick="logout()" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">🚪
         退出</button>
     </nav>
@@ -85,7 +85,7 @@
 
 
   <script>
-    const API_BASE = '';
+    const API_BASE = window.location.pathname.includes('/nanning_agents_mvp') ? '/nanning_agents_mvp' : '';
 
     // API 请求封装
     async function apiFetch(url, options = {}) {
@@ -152,7 +152,7 @@
     }
 
     function openAgent(code) {
-      window.location.href = `/chat.html?agent=${code}`;
+      window.location.href = `./chat.html?agent=${code}`;
     }
 
     // 初始化
@@ -160,7 +160,7 @@
       // 1. 检查登录状态
       const { data: { session } } = await window.supabase.auth.getSession();
       if (!session) {
-        window.location.href = '/login.html';
+        window.location.href = './login.html';
         return;
       }
 
@@ -175,7 +175,7 @@
     // 退出登录
     async function logout() {
       await window.supabase.auth.signOut();
-      window.location.href = '/login.html';
+      window.location.href = './login.html';
     }
 
     init();
