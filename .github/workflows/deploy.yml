@@ -53,9 +53,32 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }} # or use key: ${{ secrets.SERVER_SSH_KEY }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          cd /path/to/your/nanning_agents_mvp
+          # 检查目录是否存在，不存在则克隆
+          if [ ! -d "/home/dlv/nanning_agents_mvp" ]; then
+            git clone https://github.com/${{ github.repository }}.git /home/dlv/nanning_agents_mvp
+          fi
+          
+          cd /home/dlv/nanning_agents_mvp
+          
+          # 拉取最新代码
           git pull origin main
+          
+          # 安装生产依赖
           npm install --production
-          # 如果使用 pm2 进行重启:
-          # pm2 restart server
-          # 如果未来使用 docker (阶段三), 在这里执行 docker-compose pull && docker-compose up -d
+          
+          # 注入环境变量到临时 .env 文件 (用于 db:init)
+          # 注意：这里假设服务器上没有持久化的 .env，或者我们通过环境变量覆盖
+          
+          # 执行数据库初始化和种子数据
+          # 使用环境变量直接运行脚本
+          DB_HOST=${{ secrets.DB_HOST }} \
+          DB_PORT=${{ secrets.DB_PORT }} \
+          DB_NAME=${{ secrets.DB_NAME }} \
+          DB_USER=${{ secrets.DB_USER }} \
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+          npm run db:init
+          
+          # 重启服务 (假设使用 pm2)
+          # pm2 restart nanning-agents-mvp || pm2 start server.js --name nanning-agents-mvp
