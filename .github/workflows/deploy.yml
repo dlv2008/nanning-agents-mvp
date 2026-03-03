@@ -75,11 +75,11 @@ jobs:
             done
           else
             cd /home/dlv/nanning_agents_mvp
-            # 尝试依次用不同源拉取最新代码
+            # 尝试依次用不同源拉取最新代码并强制覆盖本地
             for URL in "${PROXY_URLS[@]}"; do
               echo "正在尝试拉取: $URL"
               git remote set-url origin $URL
-              if git pull origin main; then
+              if git fetch origin main && git reset --hard origin/main; then
                 SUCCESS=1
                 break
               fi
