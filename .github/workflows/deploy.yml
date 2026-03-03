@@ -54,9 +54,12 @@ jobs:
         port: ${{ secrets.SERVER_PORT }}
         script: |
           # 动态尝试多个 Github 加速节点，避免单一节点挂掉
+          REPO="${{ github.repository }}"
           PROXY_URLS=(
-            "https://kkgithub.com/${{ github.repository }}.git"
-            "https://github.com/${{ github.repository }}.git"
+            "https://kkgithub.com/${REPO}.git"
+            "https://bgithub.xyz/${REPO}.git"
+            "https://hub.gitmirror.com/https://github.com/${REPO}.git"
+            "https://github.com/${REPO}.git"
           )
 
           # 1. 检查根目录是否是一个正常的 Git 仓库，如果不是则清除
