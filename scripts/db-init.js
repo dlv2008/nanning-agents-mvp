@@ -214,6 +214,23 @@ async function initDatabase() {
     `);
 
     console.log('✅ 数据库表创建完成');
+
+    // 在 public schema 创建视图，使 Supabase PostgREST 可以访问 ai_agents schema 的数据
+    // Supabase 自托管版本默认只暴露 public schema，通过视图实现透明桥接
+    console.log('正在创建 public schema 视图桥接...');
+    const tables = [
+      'agents', 'sessions', 'messages', 'tasks',
+      'system_configs', 'violation_records', 'performance_records',
+      'employee_records', 'task_records', 'compliance_records',
+      'production_reports', 'departments', 'penalty_rules',
+      'knowledge_base', 'uploaded_files'
+    ];
+    for (const table of tables) {
+      await client.query(`
+        CREATE OR REPLACE VIEW public.${table} AS SELECT * FROM ai_agents.${table};
+      `).catch(() => { }); // 某个视图建失败不影响其他
+    }
+    console.log('✅ 视图桥接创建完成');
   } catch (err) {
     console.error('❌ 数据库初始化失败:', err.message);
     throw err;

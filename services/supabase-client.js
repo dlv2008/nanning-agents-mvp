@@ -10,6 +10,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 // 使用 Service Role Key 初始化，以便在后端拥有管理权限（绕过 RLS）
+// 注意：tables 实际存储在 ai_agents schema，已通过 db:init 在 public schema 创建视图同步
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 module.exports = supabase;
+
