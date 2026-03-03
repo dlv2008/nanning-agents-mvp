@@ -53,8 +53,10 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}   # 使用 SSH 密钥进行认证
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          # 1. 检查根目录，如不存在则创建
-          if [ ! -d "/home/dlv/nanning_agents_mvp" ]; then
+          # 1. 检查根目录是否是一个正常的 Git 仓库，如果不是则清除并重新克隆
+          if [ ! -d "/home/dlv/nanning_agents_mvp/.git" ]; then
+            echo "目标目录不存在或非有效仓库，即将重新克隆..."
+            rm -rf /home/dlv/nanning_agents_mvp || true
             git clone https://github.com/${{ github.repository }}.git /home/dlv/nanning_agents_mvp
           fi
           
