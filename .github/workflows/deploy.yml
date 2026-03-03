@@ -53,24 +53,23 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }} # or use key: ${{ secrets.SERVER_SSH_KEY }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          # 检查目录是否存在，不存在则克隆
+          # 1. 检查根目录，如不存在则创建
           if [ ! -d "/home/dlv/nanning_agents_mvp" ]; then
             git clone https://github.com/${{ github.repository }}.git /home/dlv/nanning_agents_mvp
           fi
           
           cd /home/dlv/nanning_agents_mvp
           
-          # 拉取最新代码
+          # 2. 拉取最新代码
           git pull origin main
           
-          # 安装生产依赖
-          npm install --production
+          # 3. 给自动化脚本添加执行权限
+          chmod +x deploy/run_server.sh
           
-          # 注入环境变量到临时 .env 文件 (用于 db:init)
-          # 注意：这里假设服务器上没有持久化的 .env，或者我们通过环境变量覆盖
-          
-          # 执行数据库初始化和种子数据
-          # 使用环境变量直接运行脚本
+          # 4. 调用自动化脚本并注入全量运行时环境变量
+          # 我们不再需要在远程服务器维护 .env，GitHub Secret 会直接注入到内存
+          PORT=8016 \
+          NODE_ENV=production \
           DB_HOST=${{ secrets.DB_HOST }} \
           DB_PORT=${{ secrets.DB_PORT }} \
           DB_NAME=${{ secrets.DB_NAME }} \
@@ -78,7 +77,7 @@ jobs:
           DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
           SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
-          npm run db:init
-          
-          # 重启服务 (假设使用 pm2)
-          # pm2 restart nanning-agents-mvp || pm2 start server.js --name nanning-agents-mvp
+          LLM_API_URL=${{ secrets.LLM_API_URL }} \
+          LLM_API_KEY=${{ secrets.LLM_API_KEY }} \
+          LLM_MODEL_NAME=${{ secrets.LLM_MODEL_NAME }} \
+          ./deploy/run_server.sh
