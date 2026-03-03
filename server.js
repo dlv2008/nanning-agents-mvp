@@ -549,4 +549,9 @@ async function startServer() {
     }
 }
 
-startServer();
+// 供单测时使用
+if (process.env.NODE_ENV !== 'test') {
+    startServer();
+}
+
+module.exports = app;
