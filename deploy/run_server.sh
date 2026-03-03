@@ -36,18 +36,15 @@ else
 fi
 
 # 6. 使用 PM2 启动或重启进程
-# 优先使用 PM2，如果服务器未安装则使用原生 node 运行并退出以示失败
-if command -v pm2 &> /dev/null; then
-    log "检测到 PM2，正在 (重新) 启动服务..."
-    # --update-env 确保最新的环境变量被注入到进程中
-    pm2 restart nanning-agents-mvp --update-env || pm2 start server.js --name nanning-agents-mvp --env production
-    pm2 save
-    log "${GREEN}服务已在后台运行 (PM2)${NC}"
+# 优先使用 npx 临时调用 pm2 (避免全局由于环境变量找不到而报错)
+log "正在 (重新) 启动服务 (注入环境变量)..."
+if npx --yes pm2 status | grep -q 'nanning-agents-mvp'; then
+    npx --yes pm2 restart nanning-agents-mvp --update-env
 else
-    log "警告: 未检测到 PM2！将尝试前台启动 (不推荐)"
-    # 这里建议在生产环境预装 pm2
-    exit 1
+    npx --yes pm2 start server.js --name nanning-agents-mvp --env production
 fi
+npx --yes pm2 save
+log "${GREEN}服务已在后台持久运行 (PM2)${NC}"
 
 echo -e "\n=========================================="
 log "${GREEN}部署流程执行完毕!${NC}"
