@@ -216,20 +216,35 @@ async function initDatabase() {
     console.log('✅ 数据库表创建完成');
 
     // 在 public schema 创建视图，使 Supabase PostgREST 可以访问 ai_agents schema 的数据
-    // Supabase 自托管版本默认只暴露 public schema，通过视图实现透明桥接
+    // 注意：视图名称需与 server.js 中 supabase.from('xxx') 的名称完全一致
     console.log('正在创建 public schema 视图桥接...');
-    const tables = [
-      'agents', 'sessions', 'messages', 'tasks',
-      'system_configs', 'violation_records', 'performance_records',
-      'employee_records', 'task_records', 'compliance_records',
+
+    // 直接同名映射（ai_agents 表名与 server.js 中使用名一致）
+    const sameName = [
+      'agents', 'violation_records', 'performance_records',
+      'employee_records', 'compliance_records',
       'production_reports', 'departments', 'penalty_rules',
       'knowledge_base', 'uploaded_files'
     ];
-    for (const table of tables) {
+    for (const table of sameName) {
       await client.query(`
         CREATE OR REPLACE VIEW public.${table} AS SELECT * FROM ai_agents.${table};
-      `).catch(() => { }); // 某个视图建失败不影响其他
+      `).catch(() => { });
     }
+
+    // 别名映射：ai_agents 中的实际表名 → server.js 中使用的视图名
+    const aliasMap = [
+      { view: 'sessions', source: 'ai_agents.chat_sessions' },
+      { view: 'messages', source: 'ai_agents.chat_messages' },
+      { view: 'system_configs', source: 'ai_agents.system_config' },
+      { view: 'tasks', source: 'ai_agents.task_records' },
+    ];
+    for (const { view, source } of aliasMap) {
+      await client.query(`
+        CREATE OR REPLACE VIEW public.${view} AS SELECT * FROM ${source};
+      `).catch((e) => { console.warn(`视图 ${view} 创建失败:`, e.message); });
+    }
+
     console.log('✅ 视图桥接创建完成');
   } catch (err) {
     console.error('❌ 数据库初始化失败:', err.message);
