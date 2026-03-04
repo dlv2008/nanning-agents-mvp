@@ -13,66 +13,148 @@
 </head>
 
 <body>
-    <!-- 头部 -->
+    <!-- Header -->
     <header class="header">
         <a href="./index.html" class="header-logo">
-            <div class="logo-icon">🏭</div>
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+            </div>
             <div>
                 <h1>国能南宁AI智能体平台</h1>
                 <div class="subtitle">AI 办公助手</div>
             </div>
         </a>
-        <nav class="header-nav">
-            <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
-            <a href="./index.html" class="nav-btn">← 返回门户</a>
-            <a href="./config.html" class="nav-btn">⚙️ 配置</a>
-            <button class="nav-btn" onclick="logout()"
-                style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">🚪 退出</button>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+        </button>
+        <nav class="header-nav" id="header-nav">
+            <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">
+                <svg id="theme-icon-sun" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2" style="display:none">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+                <svg id="theme-icon-moon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+            </button>
+            <a href="./index.html" class="nav-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
+                <span class="nav-text">返回门户</span>
+            </a>
+            <a href="./config.html" class="nav-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span class="nav-text">配置</span>
+            </a>
+            <button class="nav-btn danger-btn" onclick="logout()">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span class="nav-text">退出</span>
+            </button>
         </nav>
     </header>
 
-    <!-- 对话容器 -->
+    <!-- Chat Container -->
     <div class="chat-container">
-        <!-- 侧边栏 - 历史会话 -->
-        <aside class="chat-sidebar">
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="chat-sidebar" id="chat-sidebar">
             <div class="chat-sidebar-header">
                 <button class="new-chat-btn" onclick="createNewSession()">
-                    ➕ 新建会话
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    新建会话
                 </button>
             </div>
             <div class="chat-sessions-list" id="sessions-list">
-                <!-- 动态载入 -->
+                <!-- Dynamically loaded -->
             </div>
         </aside>
 
-        <!-- 主对话区 -->
+        <!-- Main Chat -->
         <div class="chat-main">
             <div class="chat-header">
-                <div class="chat-agent-info">
-                    <span class="chat-agent-icon" id="agent-icon">🤖</span>
-                    <div>
-                        <div class="chat-agent-name" id="agent-name">智能体名称</div>
-                        <div class="chat-agent-desc" id="agent-desc">描述</div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="历史会话">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <line x1="3" y1="12" x2="21" y2="12" />
+                            <line x1="3" y1="18" x2="21" y2="18" />
+                        </svg>
+                    </button>
+                    <div class="chat-agent-info">
+                        <span class="chat-agent-icon" id="agent-icon">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                <line x1="8" y1="21" x2="16" y2="21" />
+                                <line x1="12" y1="17" x2="12" y2="21" />
+                            </svg>
+                        </span>
+                        <div>
+                            <div class="chat-agent-name" id="agent-name">智能体名称</div>
+                            <div class="chat-agent-desc" id="agent-desc">描述</div>
+                        </div>
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <label for="file-input" class="nav-btn" style="cursor: pointer; margin: 0;">📎 上传文件</label>
+                    <label for="file-input" class="nav-btn"
+                        style="cursor:pointer;margin:0;color:var(--text-secondary);border-color:var(--border);background:var(--bg-surface);">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            style="width:14px;height:14px;stroke:currentColor;fill:none">
+                            <path
+                                d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                        <span class="nav-text">上传文件</span>
+                    </label>
                     <input type="file" id="file-input" style="display: none;"
                         accept=".pdf,.docx,.xlsx,.xls,.txt,.csv,.md" onchange="handleFileUpload(event)">
                 </div>
             </div>
 
-            <!-- 消息区域 -->
+            <!-- Messages -->
             <div class="chat-messages" id="messages-area">
                 <div class="chat-welcome" id="welcome-area">
-                    <div class="chat-welcome-icon" id="welcome-icon">🤖</div>
+                    <div class="chat-welcome-icon" id="welcome-icon">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg>
+                    </div>
                     <h3 id="welcome-title">加载中...</h3>
                     <p id="welcome-desc">正在连接智能体...</p>
                     <div class="quick-actions" id="quick-actions"></div>
                 </div>
             </div>
 
-            <!-- 输入区域 -->
+            <!-- Input Area -->
             <div class="chat-input-area">
                 <div id="file-badge-area" style="margin-bottom: 8px; display: none;"></div>
                 <div class="chat-input-wrapper">
@@ -81,7 +163,10 @@
                             onkeydown="handleInputKeydown(event)" oninput="autoResizeInput()"></textarea>
                     </div>
                     <button class="send-btn" id="send-btn" onclick="sendMessage()" title="发送">
-                        ➤
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -91,7 +176,6 @@
     <script>
         const API_BASE = window.location.pathname.includes('/nanning_agents_mvp') ? '/nanning_agents_mvp' : '';
 
-        // API 请求封装
         async function apiFetch(url, options = {}) {
             const { data: { session } } = await window.supabase.auth.getSession();
             const headers = {
@@ -106,7 +190,6 @@
         let isLoading = false;
         let uploadedFileContent = null;
 
-        // 获取URL参数中的智能体编码
         const urlParams = new URLSearchParams(window.location.search);
         const agentCode = urlParams.get('agent');
 
@@ -114,60 +197,43 @@
             window.location.href = './index.html';
         }
 
-        // 快捷操作映射
         const quickActionsMap = {
-            violation: [
-                '运行部张三巡检时未佩戴安全帽',
-                '查询违章积分统计',
-                '生成考核单',
-                '本月违章分析报告'
-            ],
-            hr: [
-                '分析最近的绩效数据',
-                '查询运行部张三的档案',
-                '部门绩效对比分析',
-                '生成月度绩效报告'
-            ],
-            task: [
-                '帮我分解这份安全检查通知',
-                '查看当前任务进度',
-                '即将到期任务列表',
-                '生成任务督办清单'
-            ],
-            compliance: [
-                '审核外包单位培训材料',
-                '检查安全管理制度合规性',
-                '查看证书到期提醒',
-                '生成合规审核报告'
-            ],
-            production: [
-                '生成1月安全月报',
-                '整理1月工作总结',
-                '季度经营分析报告',
-                '编制会议纪要'
-            ]
+            violation: ['运行部张三巡检时未佩戴安全帽', '查询违章积分统计', '生成考核单', '本月违章分析报告'],
+            hr: ['分析最近的绩效数据', '查询运行部张三的档案', '部门绩效对比分析', '生成月度绩效报告'],
+            task: ['帮我分解这份安全检查通知', '查看当前任务进度', '即将到期任务列表', '生成任务督办清单'],
+            compliance: ['审核外包单位培训材料', '检查安全管理制度合规性', '查看证书到期提醒', '生成合规审核报告'],
+            production: ['生成1月安全月报', '整理1月工作总结', '季度经营分析报告', '编制会议纪要']
         };
 
-        // 初始化
+        // SVG icons for avatars
+        const botAvatarSVG = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+        const userAvatarSVG = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            document.getElementById('chat-sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        }
+        function closeSidebar() {
+            document.getElementById('chat-sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+
         async function init() {
-            // 1. 检查登录状态
             const { data: { session } } = await window.supabase.auth.getSession();
             if (!session) {
                 window.location.href = './login.html';
                 return;
             }
-
             await loadAgentInfo();
             await loadSessions();
         }
 
-        // 退出登录
         async function logout() {
             await window.supabase.auth.signOut();
             window.location.href = './login.html';
         }
 
-        // 加载智能体信息
         async function loadAgentInfo() {
             try {
                 const res = await apiFetch(`${API_BASE}/api/agents/${agentCode}`);
@@ -175,16 +241,14 @@
                 if (data.success) {
                     currentAgent = data.data;
                     document.title = `${currentAgent.name} - 国能南宁AI平台`;
-                    document.getElementById('agent-icon').textContent = currentAgent.icon;
+                    document.getElementById('agent-icon').innerHTML = currentAgent.icon || botAvatarSVG;
                     document.getElementById('agent-name').textContent = currentAgent.name;
                     document.getElementById('agent-desc').textContent = currentAgent.category;
 
-                    // 设置欢迎信息
-                    document.getElementById('welcome-icon').textContent = currentAgent.icon;
+                    document.getElementById('welcome-icon').innerHTML = currentAgent.icon || botAvatarSVG;
                     document.getElementById('welcome-title').textContent = `欢迎使用${currentAgent.name}`;
                     document.getElementById('welcome-desc').textContent = currentAgent.description;
 
-                    // 快速操作
                     const actions = quickActionsMap[agentCode] || [];
                     document.getElementById('quick-actions').innerHTML = actions.map(a =>
                         `<button class="quick-action-btn" onclick="sendQuickAction('${a}')">${a}</button>`
@@ -195,7 +259,6 @@
             }
         }
 
-        // 加载会话列表
         async function loadSessions() {
             try {
                 const res = await apiFetch(`${API_BASE}/api/sessions/${agentCode}`);
@@ -211,47 +274,47 @@
         function renderSessions(sessions) {
             const list = document.getElementById('sessions-list');
             if (sessions.length === 0) {
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 13px;">暂无历史会话</div>';
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">暂无历史会话</div>';
                 return;
             }
             list.innerHTML = sessions.map(s => `
-        <div class="session-item ${s.id === currentSessionId ? 'active' : ''}" 
-             onclick="switchSession(${s.id})" title="${s.title}">
-          📝 ${s.title || '未命名会话'}
-        </div>
-      `).join('');
+                <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
+                     onclick="switchSession(${s.id})" title="${s.title}">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    ${s.title || '未命名会话'}
+                </div>
+            `).join('');
         }
 
-        // 创建新会话
         async function createNewSession() {
             currentSessionId = null;
             document.getElementById('messages-area').innerHTML = '';
             showWelcome();
             await loadSessions();
+            closeSidebar();
         }
 
         function showWelcome() {
             const actions = quickActionsMap[agentCode] || [];
             document.getElementById('messages-area').innerHTML = `
-        <div class="chat-welcome">
-          <div class="chat-welcome-icon">${currentAgent?.icon || '🤖'}</div>
-          <h3>欢迎使用${currentAgent?.name || '智能体'}</h3>
-          <p>${currentAgent?.description || ''}</p>
-          <div class="quick-actions">
-            ${actions.map(a => `<button class="quick-action-btn" onclick="sendQuickAction('${a}')">${a}</button>`).join('')}
-          </div>
-        </div>
-      `;
+                <div class="chat-welcome">
+                    <div class="chat-welcome-icon">${currentAgent?.icon || botAvatarSVG}</div>
+                    <h3>欢迎使用${currentAgent?.name || '智能体'}</h3>
+                    <p>${currentAgent?.description || ''}</p>
+                    <div class="quick-actions">
+                        ${actions.map(a => `<button class="quick-action-btn" onclick="sendQuickAction('${a}')">${a}</button>`).join('')}
+                    </div>
+                </div>
+            `;
         }
 
-        // 切换会话
         async function switchSession(sessionId) {
             currentSessionId = sessionId;
             await loadMessages(sessionId);
             await loadSessions();
+            closeSidebar();
         }
 
-        // 加载消息
         async function loadMessages(sessionId) {
             try {
                 const res = await apiFetch(`${API_BASE}/api/messages/${sessionId}`);
@@ -275,14 +338,14 @@
         }
 
         function createMessageHTML(role, content) {
-            const avatar = role === 'assistant' ? (currentAgent?.icon || '🤖') : '👤';
+            const avatar = role === 'assistant' ? (currentAgent?.icon || botAvatarSVG) : userAvatarSVG;
             const rendered = role === 'assistant' ? renderMarkdown(content) : escapeHtml(content);
             return `
-        <div class="message ${role}">
-          <div class="message-avatar">${avatar}</div>
-          <div class="message-content">${rendered}</div>
-        </div>
-      `;
+                <div class="message ${role}">
+                    <div class="message-avatar">${avatar}</div>
+                    <div class="message-content">${rendered}</div>
+                </div>
+            `;
         }
 
         function renderMarkdown(text) {
@@ -301,14 +364,12 @@
             return div.innerHTML.replace(/\n/g, '<br>');
         }
 
-        // 发送消息
         async function sendMessage() {
             const input = document.getElementById('chat-input');
             let message = input.value.trim();
             if (!message && !uploadedFileContent) return;
             if (isLoading) return;
 
-            // 如果有上传文件内容，附加到消息中
             if (uploadedFileContent) {
                 message = message || '请分析以下文件内容';
                 message += `\n\n【上传文件内容】:\n${uploadedFileContent.substring(0, 3000)}`;
@@ -321,14 +382,10 @@
             autoResizeInput();
             document.getElementById('send-btn').disabled = true;
 
-            // 清除欢迎区域
             const welcomeEl = document.querySelector('.chat-welcome');
             if (welcomeEl) welcomeEl.remove();
 
-            // 显示用户消息
             appendMessage('user', message);
-
-            // 显示加载中
             showTypingIndicator();
 
             try {
@@ -349,11 +406,11 @@
                     appendMessage('assistant', data.data.reply);
                     await loadSessions();
                 } else {
-                    appendMessage('assistant', `❌ 错误：${data.error}`);
+                    appendMessage('assistant', `错误：${data.error}`);
                 }
             } catch (err) {
                 removeTypingIndicator();
-                appendMessage('assistant', `❌ 网络错误：${err.message}\n\n请检查服务器连接。`);
+                appendMessage('assistant', `网络错误：${err.message}\n\n请检查服务器连接。`);
             }
 
             isLoading = false;
@@ -370,17 +427,17 @@
         function showTypingIndicator() {
             const area = document.getElementById('messages-area');
             area.insertAdjacentHTML('beforeend', `
-        <div class="message assistant" id="typing-indicator">
-          <div class="message-avatar">${currentAgent?.icon || '🤖'}</div>
-          <div class="message-content">
-            <div class="typing-indicator">
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-              <div class="typing-dot"></div>
-            </div>
-          </div>
-        </div>
-      `);
+                <div class="message assistant" id="typing-indicator">
+                    <div class="message-avatar">${currentAgent?.icon || botAvatarSVG}</div>
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `);
             scrollToBottom();
         }
 
@@ -394,13 +451,11 @@
             area.scrollTop = area.scrollHeight;
         }
 
-        // 快捷操作
         function sendQuickAction(text) {
             document.getElementById('chat-input').value = text;
             sendMessage();
         }
 
-        // 输入框事件
         function handleInputKeydown(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -414,7 +469,6 @@
             input.style.height = Math.min(input.scrollHeight, 120) + 'px';
         }
 
-        // 文件上传
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -446,10 +500,8 @@
             event.target.value = '';
         }
 
-        // 初始化
         init();
     </script>
-
 
 </body>
 

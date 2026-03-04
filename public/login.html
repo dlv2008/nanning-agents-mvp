@@ -6,84 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - 国能南宁AI智能体平台</title>
     <link rel="stylesheet" href="./css/style.css">
-    <style>
-        .login-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: calc(100vh - 64px);
-            padding: 24px;
-        }
-
-        .login-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 40px;
-            width: 100%;
-            max-width: 420px;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        .login-header h2 {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-
-        .login-header p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 16px;
-            border-radius: var(--radius-sm);
-            border: none;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .login-btn:hover {
-            box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
-        }
-
-        .error-msg {
-            color: var(--danger);
-            font-size: 13px;
-            margin-top: 12px;
-            text-align: center;
-            display: none;
-        }
-
-        .toggle-auth {
-            margin-top: 24px;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .toggle-auth a {
-            color: var(--primary-light);
-            text-decoration: none;
-            font-weight: 500;
-        }
-    </style>
 </head>
 
 <body>
     <header class="header">
         <div class="header-logo">
-            <div class="logo-icon">🏭</div>
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+            </div>
             <div>
                 <h1>国能南宁AI智能体平台</h1>
                 <div class="subtitle">AI 办公助手</div>

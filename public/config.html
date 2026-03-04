@@ -12,37 +12,90 @@
 </head>
 
 <body>
-    <!-- 头部 -->
+    <!-- Header -->
     <header class="header">
         <a href="./index.html" class="header-logo">
-            <div class="logo-icon">🏭</div>
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+            </div>
             <div>
                 <h1>国能南宁AI智能体平台</h1>
                 <div class="subtitle">AI 办公助手</div>
             </div>
         </a>
-        <nav class="header-nav">
-            <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
-            <button class="nav-btn" onclick="logout()"
-                style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2)">🚪 退出</button>
-            <a href="./index.html" class="nav-btn">← 返回门户</a>
-            <a href="./config.html" class="nav-btn active">⚙️ 系统配置</a>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+        </button>
+        <nav class="header-nav" id="header-nav">
+            <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="切换主题">
+                <svg id="theme-icon-sun" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2" style="display:none">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+                <svg id="theme-icon-moon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+            </button>
+            <a href="./index.html" class="nav-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
+                <span class="nav-text">返回门户</span>
+            </a>
+            <a href="./config.html" class="nav-btn active">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span class="nav-text">系统配置</span>
+            </a>
+            <button class="nav-btn danger-btn" onclick="logout()">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span class="nav-text">退出</span>
+            </button>
         </nav>
     </header>
 
     <main class="config-container">
-        <div class="portal-hero" style="padding: 24px 0;">
-            <h2>⚙️ 系统配置</h2>
-            <p>配置大模型API参数和系统设置</p>
+        <div class="portal-hero" style="padding: 24px 0; background: none; margin: 0;">
+            <h2 style="color: var(--text);">系统配置</h2>
+            <p style="color: var(--text-secondary);">配置大模型API参数和系统设置</p>
         </div>
 
-        <!-- LLM配置 -->
+        <!-- LLM Config -->
         <section class="config-section">
-            <h3>🤖 大模型API配置</h3>
+            <h3>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+                大模型API配置
+            </h3>
 
-            <!-- 系统默认 LLM 状态提示 -->
+            <!-- System LLM status banner -->
             <div id="system-llm-banner" style="
-                background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(16,185,129,0.08));
+                background: var(--success-bg);
                 border: 1px solid rgba(16,185,129,0.3);
                 border-radius: 8px;
                 padding: 12px 16px;
@@ -51,7 +104,11 @@
                 line-height: 1.7;
             ">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                    <span style="color: var(--success); font-size:16px;">✅</span>
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        style="width:16px;height:16px;stroke:var(--success);fill:none;flex-shrink:0;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
                     <strong style="color: var(--text);">系统已配置默认大模型，无需个人设置即可正常问答</strong>
                 </div>
                 <div id="system-llm-info" style="color: var(--text-secondary); padding-left: 24px;">
@@ -64,18 +121,18 @@
 
             <div class="form-group">
                 <label for="llm-url">API 地址 <span
-                        style="color:var(--text-secondary);font-weight:normal;">(可选，覆盖系统默认)</span></label>
+                        style="color:var(--text-muted);font-weight:normal;">(可选，覆盖系统默认)</span></label>
                 <input type="text" class="form-input" id="llm-url"
                     placeholder="https://api.openai.com/v1/chat/completions">
             </div>
             <div class="form-group">
                 <label for="llm-key">API 密钥 <span
-                        style="color:var(--text-secondary);font-weight:normal;">(可选，覆盖系统默认)</span></label>
+                        style="color:var(--text-muted);font-weight:normal;">(可选，覆盖系统默认)</span></label>
                 <input type="password" class="form-input" id="llm-key" placeholder="sk-xxxxxxxxxxxxxxxx">
             </div>
             <div class="form-group">
                 <label for="llm-model">模型名称 <span
-                        style="color:var(--text-secondary);font-weight:normal;">(可选，覆盖系统默认)</span></label>
+                        style="color:var(--text-muted);font-weight:normal;">(可选，覆盖系统默认)</span></label>
                 <input type="text" class="form-input" id="llm-model" placeholder="gpt-4 / qwen-max / glm-4">
             </div>
             <div class="form-group">
@@ -87,36 +144,70 @@
                 <input type="number" class="form-input" id="llm-tokens" placeholder="4096">
             </div>
             <div class="form-actions">
-                <button class="btn btn-secondary" onclick="testConnection()">🔗 测试连接</button>
-                <button class="btn btn-primary" onclick="saveConfig()">💾 保存个人配置</button>
+                <button class="btn btn-secondary" onclick="testConnection()">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                    测试连接
+                </button>
+                <button class="btn btn-primary" onclick="saveConfig()">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    保存个人配置
+                </button>
             </div>
             <div id="config-status" style="display: none;"></div>
         </section>
 
-        <!-- 数据库状态 -->
+        <!-- DB Status -->
         <section class="config-section">
-            <h3>🗄️ 数据库状态</h3>
+            <h3>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                </svg>
+                数据库状态
+            </h3>
             <div id="db-status" style="padding: 8px 0; color: var(--text-secondary); font-size: 13px;">
                 检查中...
             </div>
         </section>
 
-        <!-- 智能体状态 -->
+        <!-- Agent Status -->
         <section class="config-section">
-            <h3>📋 智能体状态</h3>
+            <h3>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                智能体状态
+            </h3>
             <div id="agents-status" style="font-size: 13px;">
                 加载中...
             </div>
         </section>
 
-        <!-- 使用说明 -->
+        <!-- Guide -->
         <section class="config-section">
-            <h3>📖 使用说明</h3>
+            <h3>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+                使用说明
+            </h3>
             <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
-                <p><strong>1. 演示模式：</strong>未配置API时，系统自动使用预设模拟响应进行演示。</p>
-                <p><strong>2. 对接大模型：</strong>填写兼容OpenAI格式的API地址、密钥和模型名称即可。</p>
-                <p><strong>3. 支持的模型：</strong>GPT-4/GPT-3.5、通义千问(Qwen)、智谱GLM、DeepSeek、百川等。</p>
-                <p><strong>4. API格式要求：</strong>接口需兼容 <code
+                <p><strong style="color:var(--text);">1. 演示模式：</strong>未配置API时，系统自动使用预设模拟响应进行演示。</p>
+                <p><strong style="color:var(--text);">2. 对接大模型：</strong>填写兼容OpenAI格式的API地址、密钥和模型名称即可。</p>
+                <p><strong style="color:var(--text);">3. 支持的模型：</strong>GPT-4/GPT-3.5、通义千问(Qwen)、智谱GLM、DeepSeek、百川等。</p>
+                <p><strong style="color:var(--text);">4. API格式要求：</strong>接口需兼容 <code
                         style="background: var(--bg-surface); padding: 2px 6px; border-radius: 4px;">/v1/chat/completions</code>
                     格式。</p>
             </div>
@@ -126,7 +217,6 @@
     <script>
         const API_BASE = window.location.pathname.includes('/nanning_agents_mvp') ? '/nanning_agents_mvp' : '';
 
-        // API 请求封装
         async function apiFetch(url, options = {}) {
             const { data: { session } } = await window.supabase.auth.getSession();
             const headers = {
@@ -136,21 +226,18 @@
             return fetch(url, { ...options, headers });
         }
 
-        // 初始化
         async function init() {
             const { data: { session } } = await window.supabase.auth.getSession();
             if (!session) {
                 window.location.href = './login.html';
                 return;
             }
-
             loadConfig();
             checkDB();
             loadAgentsStatus();
-            checkSystemLLM();  // 检测系统默认 LLM 配置状态
+            checkSystemLLM();
         }
 
-        // 检测系统默认 LLM 状态（无需登录态，公开接口）
         async function checkSystemLLM() {
             const infoEl = document.getElementById('system-llm-info');
             const bannerEl = document.getElementById('system-llm-banner');
@@ -160,11 +247,10 @@
                 if (data.success && data.data.configured) {
                     infoEl.innerHTML = `当前模型：<strong>${data.data.model}</strong> &nbsp;|&nbsp; 配置来源：${data.data.source}`;
                 } else {
-                    // 未配置默认 LLM，修改横幅为警告样式
                     bannerEl.style.borderColor = 'rgba(245,158,11,0.4)';
-                    bannerEl.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.05), rgba(245,158,11,0.05))';
+                    bannerEl.style.background = 'var(--warning-bg)';
                     infoEl.innerHTML = `<span style="color:var(--warning)">⚠️ 系统未配置默认大模型，请在下方填写您的个人 API 配置后即可使用。</span>`;
-                    document.querySelector('#system-llm-banner strong').textContent = '未检测到系统级默认大模型配置';
+                    bannerEl.querySelector('strong').textContent = '未检测到系统级默认大模型配置';
                 }
             } catch (err) {
                 infoEl.textContent = '状态检测失败，请刷新重试';
@@ -220,7 +306,7 @@
         }
 
         async function testConnection() {
-            showStatus('info', '🔄 正在测试连接...');
+            showStatus('info', '正在测试连接...');
             try {
                 const res = await apiFetch(`${API_BASE}/api/config/test`, { method: 'POST' });
                 const data = await res.json();
@@ -247,15 +333,15 @@
                 const data = await res.json();
                 if (data.success) {
                     document.getElementById('db-status').innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <span style="color: var(--success);">✅ 数据库已连接 (PostgreSQL / Supabase)</span>
-            </div>
-            <div style="padding-left: 24px;">
-              <p>智能体数量: ${data.data.agentCount}</p>
-              <p>今日会话数: ${data.data.todaySessions}</p>
-              <p>总文件数: ${data.data.totalFiles}</p>
-            </div>
-          `;
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="color: var(--success);">✅ 数据库已连接 (PostgreSQL / Supabase)</span>
+                        </div>
+                        <div style="padding-left: 24px; color: var(--text-secondary);">
+                            <p>智能体数量: ${data.data.agentCount}</p>
+                            <p>今日会话数: ${data.data.todaySessions}</p>
+                            <p>总文件数: ${data.data.totalFiles}</p>
+                        </div>
+                    `;
                 }
             } catch (err) {
                 document.getElementById('db-status').innerHTML = `<span style="color: var(--danger);">❌ 数据库连接失败: ${err.message}</span>`;
@@ -268,14 +354,14 @@
                 const data = await res.json();
                 if (data.success) {
                     document.getElementById('agents-status').innerHTML = data.data.map(a => `
-            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border);">
-              <span>${a.icon}</span>
-              <span style="flex: 1; color: var(--text);">${a.name}</span>
-              <span style="color: ${a.is_active ? 'var(--success)' : 'var(--danger)'}; font-size: 12px;">
-                ${a.is_active ? '● 在线' : '○ 离线'}
-              </span>
-            </div>
-          `).join('');
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                            <span>${a.icon}</span>
+                            <span style="flex: 1; color: var(--text);">${a.name}</span>
+                            <span style="color: ${a.is_active ? 'var(--success)' : 'var(--danger)'}; font-size: 12px;">
+                                ${a.is_active ? '● 在线' : '○ 离线'}
+                            </span>
+                        </div>
+                    `).join('');
                 }
             } catch (err) {
                 document.getElementById('agents-status').textContent = '加载失败';
@@ -283,10 +369,7 @@
         }
 
         init();
-
-
     </script>
-
 
 </body>
 
