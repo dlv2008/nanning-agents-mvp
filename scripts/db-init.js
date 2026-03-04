@@ -252,6 +252,32 @@ async function initDatabase() {
     }
 
     console.log('✅ 视图桥接创建完成');
+
+    // 授予 Supabase PostgREST 所需的角色权限
+    // anon: 匿名访问（受 RLS 限制），authenticated: 已登录用户，service_role: 后端全权限
+    console.log('正在授予 Supabase 角色权限...');
+    await client.query(`
+      -- 允许访问 ai_agents schema
+      GRANT USAGE ON SCHEMA ai_agents TO anon, authenticated, service_role;
+
+      -- 允许 service_role 完全操作所有表（后端 API 使用 service_role key）
+      GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ai_agents TO service_role;
+      GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA ai_agents TO service_role;
+
+      -- 允许 authenticated 角色对表进行增删改查
+      GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ai_agents TO authenticated;
+      GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ai_agents TO authenticated;
+
+      -- 允许 anon 角色只读（用于公开接口）
+      GRANT SELECT ON ALL TABLES IN SCHEMA ai_agents TO anon;
+
+      -- 允许访问 public schema 中的视图
+      GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+      GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated, service_role, anon;
+    `);
+    console.log('✅ 权限授予完成');
+
   } catch (err) {
     console.error('❌ 数据库初始化失败:', err.message);
     throw err;
