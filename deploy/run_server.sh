@@ -47,6 +47,19 @@ else
     log "检测到 ${AGENT_COUNT} 个智能体，跳过种子数据填充"
 fi
 
+# 5.5 重启 PostgREST 容器，强制刷新 schema 缓存
+# 原因：db:init 每次可能新增视图/表，PostgREST 的内存 schema 缓存不会自动感知
+# NOTIFY pgrst 'reload schema' 有时不可靠，直接重启是最安全的方式
+log "正在重启 PostgREST 容器以刷新 schema 缓存..."
+PGRST_CONTAINER=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -i 'rest' | head -1)
+if [ -n "$PGRST_CONTAINER" ]; then
+    docker restart "$PGRST_CONTAINER" && log "${GREEN}PostgREST ($PGRST_CONTAINER) 已重启${NC}"
+    sleep 3  # 等待 PostgREST 完成启动
+else
+    log "${YELLOW}未找到 PostgREST 容器，跳过重启（如果出现 schema cache 错误，请手动重启）${NC}"
+fi
+
+
 # 6. 将当前环境变量写入 .env.production 文件，供 PM2 加载（解决 restart 时变量失效问题）
 log "正在写入生产环境变量配置..."
 cat > "$ROOT_DIR/.env.production" << EOF
