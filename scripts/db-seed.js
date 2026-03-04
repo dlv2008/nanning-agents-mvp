@@ -28,8 +28,7 @@ async function seedDatabase() {
       ('llm_api_key', '', '大模型API密钥'),
       ('llm_model_name', 'gpt-4', '大模型名称'),
       ('llm_temperature', '0.7', '大模型温度参数'),
-      ('llm_max_tokens', '4096', '最大生成token数')
-      ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value;
+      ('llm_max_tokens', '4096', '最大生成token数');
     `);
     console.log('  ✅ 系统配置已初始化');
 

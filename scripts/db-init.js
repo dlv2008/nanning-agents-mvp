@@ -16,8 +16,7 @@ async function initDatabase() {
         config_key VARCHAR(100) NOT NULL,
         config_value TEXT,
         description TEXT,
-        updated_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(user_id, config_key)
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
     await client.query(`ALTER TABLE ai_agents.system_config ADD COLUMN IF NOT EXISTS user_id UUID;`).catch(() => { });
