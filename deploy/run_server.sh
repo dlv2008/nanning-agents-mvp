@@ -65,17 +65,21 @@ LLM_MODEL_NAME=${LLM_MODEL_NAME}
 EOF
 chmod 600 "$ROOT_DIR/.env.production"  # 仅 dlv 用户可读
 
-# 7. 使用 PM2 启动或重启进程（通过 --env-file 注入最新变量，确保每次 CD 都生效）
+# 7. 使用 PM2 启动进程（先停止再重启，确保每次都加载最新环境变量）
 log "正在 (重新) 启动服务..."
-if npx --yes pm2 list 2>/dev/null | grep -q 'nanning-agents-mvp'; then
-    # 服务已存在：停止旧进程，用最新环境文件重启，确保变量注入
-    npx --yes pm2 stop nanning-agents-mvp 2>/dev/null || true
-    npx --yes pm2 delete nanning-agents-mvp 2>/dev/null || true
-fi
-# 统一用 start 指令，保证每次 CD 都能加载到最新的 Secret 变量
+# 停止并删除旧进程（如果存在）
+npx --yes pm2 stop nanning-agents-mvp 2>/dev/null || true
+npx --yes pm2 delete nanning-agents-mvp 2>/dev/null || true
+
+# source 环境变量文件后再启动，兼容所有 PM2 版本
+set -a
+# shellcheck disable=SC1091
+source "$ROOT_DIR/.env.production"
+set +a
+
+# 使用 pm2 start，PM2 会自动继承当前 shell 的环境变量
 npx --yes pm2 start server.js \
     --name nanning-agents-mvp \
-    --env-file "$ROOT_DIR/.env.production" \
     --time
 
 # 保存 PM2 进程列表，用于开机自动恢复
