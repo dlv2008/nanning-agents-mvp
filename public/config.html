@@ -39,17 +39,43 @@
         <!-- LLM配置 -->
         <section class="config-section">
             <h3>🤖 大模型API配置</h3>
+
+            <!-- 系统默认 LLM 状态提示 -->
+            <div id="system-llm-banner" style="
+                background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(16,185,129,0.08));
+                border: 1px solid rgba(16,185,129,0.3);
+                border-radius: 8px;
+                padding: 12px 16px;
+                margin-bottom: 20px;
+                font-size: 13px;
+                line-height: 1.7;
+            ">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="color: var(--success); font-size:16px;">✅</span>
+                    <strong style="color: var(--text);">系统已配置默认大模型，无需个人设置即可正常问答</strong>
+                </div>
+                <div id="system-llm-info" style="color: var(--text-secondary); padding-left: 24px;">
+                    正在检测系统配置...
+                </div>
+                <div style="color: var(--text-secondary); padding-left: 24px; margin-top:4px;">
+                    💡 下方为<strong>可选的个人配置</strong>，填写后将覆盖系统默认配置，仅对您的账号生效。
+                </div>
+            </div>
+
             <div class="form-group">
-                <label for="llm-url">API 地址</label>
+                <label for="llm-url">API 地址 <span
+                        style="color:var(--text-secondary);font-weight:normal;">(可选，覆盖系统默认)</span></label>
                 <input type="text" class="form-input" id="llm-url"
                     placeholder="https://api.openai.com/v1/chat/completions">
             </div>
             <div class="form-group">
-                <label for="llm-key">API 密钥</label>
+                <label for="llm-key">API 密钥 <span
+                        style="color:var(--text-secondary);font-weight:normal;">(可选，覆盖系统默认)</span></label>
                 <input type="password" class="form-input" id="llm-key" placeholder="sk-xxxxxxxxxxxxxxxx">
             </div>
             <div class="form-group">
-                <label for="llm-model">模型名称</label>
+                <label for="llm-model">模型名称 <span
+                        style="color:var(--text-secondary);font-weight:normal;">(可选，覆盖系统默认)</span></label>
                 <input type="text" class="form-input" id="llm-model" placeholder="gpt-4 / qwen-max / glm-4">
             </div>
             <div class="form-group">
@@ -62,7 +88,7 @@
             </div>
             <div class="form-actions">
                 <button class="btn btn-secondary" onclick="testConnection()">🔗 测试连接</button>
-                <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+                <button class="btn btn-primary" onclick="saveConfig()">💾 保存个人配置</button>
             </div>
             <div id="config-status" style="display: none;"></div>
         </section>
@@ -121,6 +147,28 @@
             loadConfig();
             checkDB();
             loadAgentsStatus();
+            checkSystemLLM();  // 检测系统默认 LLM 配置状态
+        }
+
+        // 检测系统默认 LLM 状态（无需登录态，公开接口）
+        async function checkSystemLLM() {
+            const infoEl = document.getElementById('system-llm-info');
+            const bannerEl = document.getElementById('system-llm-banner');
+            try {
+                const res = await fetch(`${API_BASE}/api/system-llm-status`);
+                const data = await res.json();
+                if (data.success && data.data.configured) {
+                    infoEl.innerHTML = `当前模型：<strong>${data.data.model}</strong> &nbsp;|&nbsp; 配置来源：${data.data.source}`;
+                } else {
+                    // 未配置默认 LLM，修改横幅为警告样式
+                    bannerEl.style.borderColor = 'rgba(245,158,11,0.4)';
+                    bannerEl.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.05), rgba(245,158,11,0.05))';
+                    infoEl.innerHTML = `<span style="color:var(--warning)">⚠️ 系统未配置默认大模型，请在下方填写您的个人 API 配置后即可使用。</span>`;
+                    document.querySelector('#system-llm-banner strong').textContent = '未检测到系统级默认大模型配置';
+                }
+            } catch (err) {
+                infoEl.textContent = '状态检测失败，请刷新重试';
+            }
         }
 
         async function logout() {

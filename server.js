@@ -3,7 +3,11 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-require('dotenv').config();
+// 根据运行环境加载对应的配置文件
+// 生产环境读 .env.production（由 CI/CD 的 run_server.sh 写入）
+// 开发/测试环境读 .env（本地手动维护）
+const dotenvFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+require('dotenv').config({ path: dotenvFile });
 
 const llmClient = require('./services/llm-client');
 const supabase = require('./services/supabase-client');
@@ -438,6 +442,21 @@ app.get('/api/data/compliance', async (req, res) => {
     res.json({ success: true, data: [] });
 });
 
+// 系统默认 LLM 状态查询（供 config 页面展示，不暴露 key）
+app.get('/api/system-llm-status', async (req, res) => {
+    const status = llmClient.getStatus ? llmClient.getStatus() : null;
+    const hasKey = !!(process.env.LLM_API_KEY || (status && status.hasKey));
+    res.json({
+        success: true,
+        data: {
+            configured: hasKey,
+            model: process.env.LLM_MODEL_NAME || (status && status.model) || '未知',
+            apiUrl: process.env.LLM_API_URL || (status && status.apiUrl) || '',
+            source: hasKey ? (process.env.LLM_API_KEY ? '环境变量 (.env.production)' : '数据库 (system_configs)') : '未配置',
+        }
+    });
+});
+
 // 系统配置
 app.get('/api/config', authenticateUser, async (req, res) => {
     try {
@@ -531,7 +550,7 @@ async function startServer() {
             .select('*')
             .filter('user_id', 'is', null);
 
-        if (configs) {
+        if (configs && configs.length > 0) {
             const configObj = {};
             configs.forEach(c => configObj[c.config_key] = c.config_value);
             llmClient.updateConfig({
@@ -541,6 +560,19 @@ async function startServer() {
                 temperature: parseFloat(configObj.llm_temperature || '0.7'),
                 maxTokens: parseInt(configObj.llm_max_tokens || '4096'),
             });
+            console.log('   LLM配置来源: 数据库 (system_configs)');
+        } else if (process.env.LLM_API_KEY) {
+            // 兜底：数据库无配置时，从环境变量加载（生产环境 .env.production 提供）
+            llmClient.updateConfig({
+                apiUrl: process.env.LLM_API_URL,
+                apiKey: process.env.LLM_API_KEY,
+                modelName: process.env.LLM_MODEL_NAME || 'glm-4',
+                temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
+                maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '4096'),
+            });
+            console.log('   LLM配置来源: 环境变量 (.env.production)');
+        } else {
+            console.warn('   ⚠️  警告: 未检测到LLM配置，将使用演示模式');
         }
 
         app.listen(PORT, '0.0.0.0', () => {
