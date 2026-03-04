@@ -12,12 +12,15 @@ async function initDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS ai_agents.system_config (
         id SERIAL PRIMARY KEY,
-        config_key VARCHAR(100) UNIQUE NOT NULL,
+        user_id UUID,
+        config_key VARCHAR(100) NOT NULL,
         config_value TEXT,
         description TEXT,
-        updated_at TIMESTAMP DEFAULT NOW()
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, config_key)
       );
     `);
+    await client.query(`ALTER TABLE ai_agents.system_config ADD COLUMN IF NOT EXISTS user_id UUID;`).catch(() => { });
 
     // 智能体定义表
     await client.query(`
@@ -39,11 +42,14 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS ai_agents.chat_sessions (
         id SERIAL PRIMARY KEY,
         agent_id INTEGER REFERENCES ai_agents.agents(id),
+        user_id UUID,
         title VARCHAR(200),
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+    // 安全补列（表已存在时补入缺失字段，保持幂等）
+    await client.query(`ALTER TABLE ai_agents.chat_sessions ADD COLUMN IF NOT EXISTS user_id UUID;`).catch(() => { });
 
     // 对话消息表
     await client.query(`
